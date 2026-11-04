@@ -1,0 +1,52 @@
+{
+  "name": "nextai-proxy-hub",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Next AI Proxy Hub - API Reseller Management Platform and Reverse Proxy",
+  "main": "dist/src/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "dev:proxy": "tsx watch src/proxy/index.ts",
+    "dev:bot": "tsx watch src/bot/index.ts",
+    "build": "prisma generate && tsc",
+    "start": "prisma db push --skip-generate && node dist/src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:push": "prisma db push",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "customer:create-test": "tsx scripts/create-test-customer.ts"
+  },
+  "keywords": [
+    "proxy",
+    "ai-reseller",
+    "discord-bot",
+    "reverse-proxy",
+    "bearlab"
+  ],
+  "author": "Next AI Hub Team",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "@fastify/rate-limit": "^9.1.0",
+    "@prisma/client": "^5.22.0",
+    "decimal.js": "^10.4.3",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "qrcode": "^1.5.4",
+    "thai-qr-payment": "^1.2.0",
+    "undici": "^6.19.8",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.8.7",
+    "@types/qrcode": "^1.5.6",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

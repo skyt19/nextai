@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: nextai
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        value: file:./dev.db
+      - key: ENABLE_LEGACY_PROXY
+        value: "false"

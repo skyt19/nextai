@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.github
+tests
+storage/slips/*
+!storage/slips/.gitkeep
+dev.db*
+.env
+.env.local
+*.log
+scratch

@@ -1,0 +1,243 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Customer {
+  id                String               @id @default(uuid())
+  username          String
+  discordUserId     String               @unique @map("discord_user_id")
+  nextaiApiKeyHash  String?              @unique @map("nextai_api_key_hash")
+  balance           Decimal              @default(0)
+  balanceCurrency   String               @default("CNY") @map("balance_currency")
+  keyStatus         String               @default("ACTIVE") @map("key_status") // ACTIVE, DISABLED, SUSPENDED
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+
+  payments          Payment[]
+  modelGroups       CustomerModelGroup[]
+  tickets           Ticket[]
+  tokens            CustomerTokenRecord[]
+
+  @@map("customers")
+}
+
+model Payment {
+  id                  String         @id @default(uuid())
+  customerId          String         @map("customer_id")
+  ticketChannelId     String         @map("ticket_channel_id")
+  packageId           String         @map("package_id")
+  expectedAmountThb   Decimal        @map("expected_amount_thb")
+  verifiedAmountThb   Decimal?       @map("verified_amount_thb")
+  paymentStatus       String         @default("PENDING_PAYMENT") @map("payment_status") // PENDING_PAYMENT, SLIP_SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED, EXPIRED, COMPLETED
+  slipReference       String?        @map("slip_reference")
+  reviewerDiscordId   String?        @map("reviewer_discord_id")
+  rejectionReason     String?        @map("rejection_reason")
+  calculationSnapshot String         @map("calculation_snapshot") // JSON string of snapshot
+  approvedAt          DateTime?      @map("approved_at")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  customer            Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  package             Package            @relation(fields: [packageId], references: [id])
+  slips               PaymentSlip[]
+  fundingAllocation   FundingAllocation?
+
+  @@map("payments")
+}
+
+model PaymentSlip {
+  id                   String   @id @default(uuid())
+  paymentId            String   @map("payment_id")
+  privateFileReference String   @map("private_file_reference")
+  fileHash             String   @unique @map("file_hash") // SHA-256
+  fileSizeBytes        Int      @map("file_size_bytes")
+  mimeType             String   @map("mime_type")
+  submittedAt          DateTime @default(now()) @map("submitted_at")
+
+  payment              Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("payment_slips")
+}
+
+model Package {
+  id                    String    @id @default(uuid())
+  name                  String
+  groupId               String    @map("group_id") // NxG1, NxGE, NxGC
+  referenceModelId      String?   @map("reference_model_id")
+  referenceRequests     Int       @map("reference_requests")
+  referenceModelCostCny Decimal   @map("reference_model_cost_cny")
+  markup                Decimal
+  sellingPriceThb       Decimal   @map("package_selling_price_thb")
+  bufferCny             Decimal   @default(0) @map("buffer_cny")
+  enabled               Boolean   @default(true)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  payments              Payment[]
+
+  @@map("packages")
+}
+
+model ModelCatalogEntry {
+  id                     String   @id @default(uuid())
+  publicModelId          String   @unique @map("public_model_id")
+  displayName            String   @map("display_name")
+  originalBearlabModelId String   @map("original_bearlab_model_id")
+  groupId                String   @map("group_id") // NxG1, NxGE, NxGC
+  baseCostCny            Decimal  @map("base_cost_cny")
+  markup                 Decimal
+  sellingPriceCny        Decimal  @map("selling_price_cny")
+  enabled                Boolean  @default(true)
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@map("model_catalog")
+}
+
+model CustomerModelGroup {
+  customerId String   @map("customer_id")
+  groupId    String   @map("group_id") // NxG1, NxGE, NxGC
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@id([customerId, groupId])
+  @@map("customer_model_groups")
+}
+
+model ExchangeRateSnapshot {
+  id            String   @id @default(uuid())
+  baseCurrency  String   @default("CNY") @map("base_currency")
+  quoteCurrency String   @map("quote_currency") // THB, USD
+  rate          Decimal
+  rateDate      String   @map("rate_date")
+  retrievedAt   DateTime @default(now()) @map("retrieved_at")
+  source        String   @default("Frankfurter API")
+  isStale       Boolean  @default(false) @map("is_stale")
+
+  @@map("exchange_rate_snapshots")
+}
+
+model UpstreamCredential {
+  id             String   @id @default(uuid())
+  groupId        String   @unique @map("group_id") // NxG1, NxGE, NxGC
+  credentialName String   @map("credential_name")
+  encryptedApiKey String  @map("encrypted_api_key")
+  iv             String
+  authTag        String   @map("auth_tag")
+  enabled        Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("upstream_credentials")
+}
+
+model AdminUser {
+  discordUserId String   @id @map("discord_user_id")
+  username      String
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("admin_users")
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  actorDiscordId String   @map("actor_discord_id")
+  action         String
+  targetType     String   @map("target_type")
+  targetId       String   @map("target_id")
+  details        String   @map("details") // JSON string
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
+
+model Ticket {
+  id                 String    @id @default(uuid())
+  discordChannelId   String    @unique @map("discord_channel_id")
+  discordGuildId     String    @map("discord_guild_id")
+  ownerDiscordId     String    @map("owner_discord_id")
+  customerId         String?   @map("customer_id")
+  category           String    @map("category") // PURCHASE_MODEL, GENERAL_INQUIRY
+  status             String    @default("OPEN") @map("status") // OPEN, CLAIMED, CLOSED, DELETED
+  claimedByDiscordId String?   @map("claimed_by_discord_id")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  closedAt           DateTime? @map("closed_at")
+  closedByDiscordId  String?   @map("closed_by_discord_id")
+  autoDeleteAt       DateTime? @map("auto_delete_at")
+  deletedAt          DateTime? @map("deleted_at")
+  deletedByDiscordId String?   @map("deleted_by_discord_id")
+
+  customer           Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([ownerDiscordId, status])
+  @@index([category, status])
+  @@index([status, autoDeleteAt])
+  @@map("tickets")
+}
+
+model CustomerTokenRecord {
+  id                 String    @id @default(uuid())
+  customerId         String    @map("customer_id")
+  groupId            String    @map("group_id") // Strict 1 group per token: NxG1, NxGE, NxGC
+  tokenIdentifier    String    @unique @map("token_identifier") // safe reference (masked/hash), NOT plaintext secret
+  tokenName          String?   @map("token_name")
+  newApiTokenId      Int?      @map("new_api_token_id")
+  quotaCny           Decimal   @map("quota_cny")
+  status             String    @default("ACTIVE") @map("status") // ACTIVE, DISABLED, EXHAUSTED
+  provisioningStatus String    @default("PENDING") @map("provisioning_status") // PENDING, PROVISIONING, PROVISIONED, DELIVERED, DELIVERY_FAILED, FAILED, UNKNOWN
+  keyHash            String?   @map("key_hash") // SHA-256 hash of API key
+  encryptedKey       String?   @map("encrypted_key") // AES-256-GCM temporary secret delivery storage
+  iv                 String?
+  authTag            String?   @map("auth_tag")
+  paymentId          String?   @map("payment_id")
+  lastError          String?   @map("last_error")
+  deliveredAt        DateTime? @map("delivered_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  customer           Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, groupId])
+  @@index([provisioningStatus])
+  @@map("customer_token_records")
+}
+
+model FundingAllocation {
+  id                   String              @id @default(uuid())
+  paymentId            String              @unique @map("payment_id")
+  packageId            String              @map("package_id")
+  providerCostCny      Decimal             @map("provider_cost_cny")
+  status               String              @default("PENDING_FUNDING") @map("status") // PENDING_FUNDING, ALLOCATED, REFUNDED_CANCELLED
+  allocatedAt          DateTime?           @map("allocated_at")
+  allocatedByDiscordId String?             @map("allocated_by_discord_id")
+  topupRecordId        String?             @map("topup_record_id")
+  notes                String?
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  payment              Payment             @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  topupRecord          BearlabTopupRecord? @relation(fields: [topupRecordId], references: [id])
+
+  @@map("funding_allocations")
+}
+
+model BearlabTopupRecord {
+  id             String              @id @default(uuid())
+  amountCny      Decimal             @map("amount_cny")
+  topupDate      DateTime            @default(now()) @map("topup_date")
+  adminDiscordId String              @map("admin_discord_id")
+  notes          String?
+  createdAt      DateTime            @default(now()) @map("created_at")
+
+  allocations    FundingAllocation[]
+
+  @@map("bearlab_topup_records")
+}
