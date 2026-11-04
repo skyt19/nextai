@@ -155,7 +155,7 @@ model AuditLog {
   details        String   @map("details") // JSON string
   createdAt      DateTime @default(now()) @map("created_at")
 
-  @@map("audit_logs")
+  @@map("nextai_audit_logs")
 }
 
 model Ticket {
