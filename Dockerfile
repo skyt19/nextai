@@ -1,6 +1,8 @@
 # Build Stage
 FROM node:22-alpine AS builder
 
+RUN apk add --no-cache openssl libc6-compat
+
 WORKDIR /app
 
 # Install build dependencies
@@ -19,11 +21,14 @@ RUN npm run build
 # Production Stage
 FROM node:22-alpine AS runner
 
+RUN apk add --no-cache openssl libc6-compat
+
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=12345
+ENV DATABASE_URL="file:./dev.db"
 
 COPY package*.json ./
 COPY prisma ./prisma/
