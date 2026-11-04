@@ -28,7 +28,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=12345
-ENV DATABASE_URL="file:./dev.db"
 
 COPY package*.json ./
 COPY prisma ./prisma/
