@@ -6,14 +6,32 @@ dotenv.config();
 const DEV_PLACEHOLDER_SECRET = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 const HEX_SECRET_REGEX = /^[0-9a-fA-F]{64}$/;
 
+function normalizeUrl(fallback: string) {
+  return z.preprocess((val) => {
+    if (typeof val !== 'string' || val.trim() === '') return fallback;
+    let clean = val.trim().replace(/^["']|["']$/g, '');
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = `https://${clean}`;
+    }
+    return clean;
+  }, z.string().url().default(fallback));
+}
+
 const baseEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(12345),
   HOST: z.string().default('0.0.0.0'),
-  PUBLIC_API_BASE_URL: z.string().url().default('http://localhost:12345/v1'),
-  UPSTREAM_BASE_URL: z.string().url().default('http://127.0.0.1:3000/v1'),
-  NEWAPI_BASE_URL: z.string().url().default('http://127.0.0.1:3000/v1'),
-  NEWAPI_PUBLIC_ENDPOINT: z.string().default('http://127.0.0.1:3000/v1'),
+  PUBLIC_API_BASE_URL: normalizeUrl('http://localhost:12345/v1'),
+  UPSTREAM_BASE_URL: normalizeUrl('http://127.0.0.1:3000/v1'),
+  NEWAPI_BASE_URL: normalizeUrl('http://127.0.0.1:3000/v1'),
+  NEWAPI_PUBLIC_ENDPOINT: z.preprocess((val) => {
+    if (typeof val !== 'string' || val.trim() === '') return 'http://127.0.0.1:3000/v1';
+    let clean = val.trim().replace(/^["']|["']$/g, '');
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = `https://${clean}`;
+    }
+    return clean;
+  }, z.string().default('http://127.0.0.1:3000/v1')),
   NEWAPI_ADMIN_ACCESS_TOKEN: z.string().optional(),
   NEWAPI_USD_EXCHANGE_RATE: z.coerce.number().positive().default(6.7),
 
