@@ -9,7 +9,7 @@
     "dev:proxy": "tsx watch src/proxy/index.ts",
     "dev:bot": "tsx watch src/bot/index.ts",
     "build": "prisma generate && tsc",
-    "start": "prisma db push --skip-generate && node dist/src/index.js",
+    "start": "node dist/src/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

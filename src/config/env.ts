@@ -19,7 +19,7 @@ function normalizeUrl(fallback: string) {
 
 const baseEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().default(12345),
+  PORT: z.coerce.number().default(10000),
   HOST: z.string().default('0.0.0.0'),
   PUBLIC_API_BASE_URL: normalizeUrl('http://localhost:12345/v1'),
   UPSTREAM_BASE_URL: normalizeUrl('http://127.0.0.1:3000/v1'),

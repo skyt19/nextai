@@ -27,7 +27,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-ENV PORT=12345
+ENV PORT=10000
 
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -42,6 +42,6 @@ COPY --from=builder /app/dist ./dist
 # Create storage directory for slips
 RUN mkdir -p storage/slips
 
-EXPOSE 12345
+EXPOSE 10000
 
 CMD ["npm", "start"]
