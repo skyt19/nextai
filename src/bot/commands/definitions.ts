@@ -19,7 +19,7 @@ export const customerSlashCommands = [
 
   new SlashCommandBuilder()
     .setName('help')
-    .setDescription('แสดงคู่มือและวิธีใช้งานคำสั่ง Next AI Proxy Hub'),
+    .setDescription('แสดงคู่มือและวิธีใช้งานคำสั่ง SealAPI Hub'),
 ];
 
 export const adminSlashCommands = [
@@ -55,7 +55,7 @@ export const adminSlashCommands = [
 
   new SlashCommandBuilder()
     .setName('customer-key')
-    .setDescription('จัดการ Next AI API Key ของลูกค้า (สร้างใหม่, หมุนเวียน หรือระงับการใช้งาน)')
+    .setDescription('จัดการ SealAPI API Key ของลูกค้า (สร้างใหม่, หมุนเวียน หรือระงับการใช้งาน)')
     .addStringOption((opt) =>
       opt.setName('user_id').setDescription('Discord User ID ของลูกค้า').setRequired(true)
     )

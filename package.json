@@ -2,7 +2,7 @@
   "name": "nextai-proxy-hub",
   "version": "1.0.0",
   "type": "module",
-  "description": "Next AI Proxy Hub - API Reseller Management Platform and Reverse Proxy",
+  "description": "SealAPI Hub - API Reseller Management Platform and Gateway",
   "main": "dist/src/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

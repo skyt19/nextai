@@ -55,7 +55,7 @@ export class TicketLoggerService {
         .setTitle(`📋 Ticket Activity: ${payload.eventType.replace(/_/g, ' ')}`)
         .setColor(colorMap[payload.eventType] || 0x5865f2)
         .setTimestamp()
-        .setFooter({ text: 'Next AI Ticket Audit Log' });
+        .setFooter({ text: 'SealAPI Ticket Audit Log' });
 
       if (payload.ticketId) {
         embed.addFields({ name: 'Ticket ID', value: `\`${payload.ticketId}\``, inline: true });

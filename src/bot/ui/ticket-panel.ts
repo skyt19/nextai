@@ -13,9 +13,9 @@ export class TicketPanelUI {
    */
   public static supportCenterEmbed(): EmbedBuilder {
     return new EmbedBuilder()
-      .setTitle('Next AI Proxy Hub | ศูนย์บริการลูกค้า')
+      .setTitle('SealAPI Hub | ศูนย์บริการลูกค้า')
       .setDescription(
-        `ยินดีต้อนรับสู่ **Next AI Proxy Hub Support**\n\n` +
+        `ยินดีต้อนรับสู่ **SealAPI Hub Support**\n\n` +
           `กรุณาเลือกประเภทของ Ticket ที่ท่านต้องการเปิดบริการ:\n\n` +
           `1. **ซื้อแพ็กเกจโมเดล**\n` +
           `   สำหรับลูกค้าที่ต้องการสั่งซื้อแพ็กเกจโมเดล AI, เติมเครดิตการใช้งาน หรือสอบถามอัตราค่าบริการ\n\n` +
@@ -24,7 +24,7 @@ export class TicketPanelUI {
           `*กรุณาเลือกประเภทบริการจากเมนูด้านล่างนี้เพื่อเปิดห้อง Ticket ส่วนตัว*`
       )
       .setColor(0x5865f2)
-      .setFooter({ text: 'Next AI Support Desk' })
+      .setFooter({ text: 'SealAPI Support Desk' })
       .setTimestamp();
   }
 
@@ -58,7 +58,7 @@ export class TicketPanelUI {
     return new EmbedBuilder()
       .setTitle('💳 ซื้อแพ็กเกจโมเดล (Stage 1: เลือกกลุ่มโมเดล)')
       .setDescription(
-        `ยินดีต้อนรับคุณ <@${username}> สู่ขั้นตอนการสั่งซื้อแพ็กเกจ Next AI Proxy Hub\n\n` +
+        `ยินดีต้อนรับคุณ <@${username}> สู่ขั้นตอนการสั่งซื้อแพ็กเกจ SealAPI Hub\n\n` +
           `กรุณาเลือก **กลุ่มโมเดล (Model Group)** ที่ท่านต้องการใช้งานจากเมนูด้านล่างนี้:\n\n` +
           `• **NxG1 — Gemini Group A**: โมเดล Gemini รุ่น Fast & High (ความเร็วและงานทั่วไป)\n` +
           `• **NxGE — Gemini Group E**: โมเดล Gemini รุ่น Pro & Search (การคิดวิเคราะห์ขั้นสูงและ Search)\n` +

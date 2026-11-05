@@ -340,7 +340,7 @@ describe('Discord Ticket Management System Tests', () => {
   describe('4. Ticket Panel UI Components', () => {
     it('generates Support Center embed with required categories in Thai', () => {
       const embed = TicketPanelUI.supportCenterEmbed();
-      expect(embed.data.title).toBe('Next AI Proxy Hub | ศูนย์บริการลูกค้า');
+      expect(embed.data.title).toBe('SealAPI Hub | ศูนย์บริการลูกค้า');
       expect(embed.data.description).toContain('ซื้อแพ็กเกจโมเดล');
       expect(embed.data.description).toContain('สอบถามข้อมูล');
     });

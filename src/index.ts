@@ -6,7 +6,7 @@ import { disconnectPrisma } from './db/client.js';
 
 async function bootstrap() {
   console.log('====================================================');
-  console.log('  NEXT AI PROXY HUB — API RESELLER GATEWAY & BOT   ');
+  console.log('  SEALAPI HUB — API RESELLER GATEWAY & BOT         ');
   console.log('====================================================');
   console.log(`Environment: ${env.NODE_ENV}`);
   console.log(`Proxy Gateway Port: ${env.PORT}`);

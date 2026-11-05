@@ -223,7 +223,7 @@ export class TicketHandler {
         type: ChannelType.GuildText,
         parent: parentId,
         permissionOverwrites: overwrites,
-        topic: `Next AI Ticket [${category}] สำหรับคุณ ${customer.username} (${customer.id})`,
+        topic: `SealAPI Ticket [${category}] สำหรับคุณ ${customer.username} (${customer.id})`,
       });
 
       // 5. Look up existing Customer ID if registered

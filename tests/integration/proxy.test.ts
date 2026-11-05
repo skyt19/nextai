@@ -81,7 +81,7 @@ describe('Reverse Proxy Gateway Integration Tests (Port 12345/v1)', () => {
       expect(response.statusCode).toBe(200);
       const json = JSON.parse(response.body);
       expect(json.status).toBe('ok');
-      expect(json.service).toBe('Next AI Proxy Hub');
+      expect(json.service).toBe('SealAPI Hub');
     });
 
     it('GET /v1/models rejects requests without Authorization header with 401', async () => {

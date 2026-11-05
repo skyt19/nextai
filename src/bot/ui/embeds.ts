@@ -6,7 +6,7 @@ import { env } from '../../config/env.js';
 export class BotEmbeds {
   public static ticketWelcome(username: string): EmbedBuilder {
     return new EmbedBuilder()
-      .setTitle('🎫 Next AI Proxy Hub — สั่งซื้อแพ็กเกจโมเดล')
+      .setTitle('🎫 SealAPI Hub — สั่งซื้อแพ็กเกจโมเดล')
       .setDescription(
         `ยินดีต้อนรับคุณ **${username}**!\n\nกรุณาเลือกกลุ่มโมเดล AI ที่ท่านต้องการใช้งานด้านล่างนี้:\n` +
           `• **Group A [NxG1]**: โมเดล Gemini รุ่น Fast & High\n` +
@@ -15,7 +15,7 @@ export class BotEmbeds {
           `*การสั่งซื้อและการชำระเงินทั้งหมดจะดำเนินรายการอย่างปลอดภัยในห้อง Ticket ส่วนตัวนี้*`
       )
       .setColor(0x5865f2)
-      .setFooter({ text: 'Next AI Proxy Hub' });
+      .setFooter({ text: 'SealAPI Hub' });
   }
 
   /**

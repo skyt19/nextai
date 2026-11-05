@@ -41,8 +41,8 @@ export function createProxyServer(options: ProxyServerOptions): FastifyInstance 
   // Healthcheck endpoint (unauthenticated)
   fastify.get('/health', async () => ({
     status: 'ok',
-    service: 'Next AI Proxy Hub',
-    role: 'NextAI Admin & Business Management System',
+    service: 'SealAPI Hub',
+    role: 'SealAPI Admin & Business Management System',
     legacyProxy: isProxyEnabled ? 'enabled' : 'disabled',
     gatewayEndpoint: options.upstreamBaseUrl,
     timestamp: new Date().toISOString(),
@@ -56,7 +56,7 @@ export function createProxyServer(options: ProxyServerOptions): FastifyInstance 
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="refresh" content="2; url=${targetUrl}">
-  <title>NextAI - กำลังพาท่านไป...</title>
+  <title>SealAPI - กำลังพาท่านไป...</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -107,7 +107,7 @@ export function createProxyServer(options: ProxyServerOptions): FastifyInstance 
 <body>
   <div class="card">
     <div class="spinner"></div>
-    <h1>NextAI Hub</h1>
+    <h1>SealAPI Hub</h1>
     <p>กำลังพาท่านไปที่ URL:<br><br><a href="${targetUrl}">${targetUrl}</a></p>
     <p style="font-size: 0.875rem; color: #64748b;">หากหน้าเว็บไม่เปลี่ยนเส้นทางโดยอัตโนมัติ กรุณากดที่ลิงก์ด้านบน</p>
   </div>

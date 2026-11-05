@@ -202,7 +202,7 @@ export class NextAiDiscordBot {
     } else if (commandName === 'help') {
       await interaction.reply({
         content:
-          `### 📖 คู่มือการใช้งาน Next AI Proxy Hub\n\n` +
+          `### 📖 คู่มือการใช้งาน SealAPI Hub\n\n` +
           `**ศูนย์บริการลูกค้า & การสั่งซื้อ:**\n` +
           `ไปที่ห้อง <#${this.config.ticketPanelChannelId}> เพื่อเปิด Ticket **ซื้อแพ็กเกจโมเดล** หรือ **สอบถามข้อมูล**\n\n` +
           `**คำสั่งสำหรับลูกค้า (Customer Commands):**\n` +
@@ -213,7 +213,7 @@ export class NextAiDiscordBot {
           `• \`/help\` — แสดงคู่มือการใช้งานคำสั่งต่างๆ\n\n` +
           `**การเชื่อมต่อใช้งาน API Proxy Gateway:**\n` +
           `• Base URL: \`${this.config.gatewayUrl}\`\n` +
-          `• Authorization: \`Bearer <your_nextai_api_key>\``,
+          `• Authorization: \`Bearer <your_sealapi_api_key>\``,
         ephemeral: true,
       });
     }
@@ -314,7 +314,7 @@ export class NextAiDiscordBot {
           const { plainTextApiKey } = await this.customerService.generateOrRotateApiKey(targetUserId);
           await interaction.editReply({
             content:
-              `🔑 **สร้าง Next AI API Key ใหม่สำหรับ <@${targetUserId}>:**\n` +
+              `🔑 **สร้าง SealAPI API Key ใหม่สำหรับ <@${targetUserId}>:**\n` +
               `\`\`\`\n${plainTextApiKey}\n\`\`\`\n` +
               `*กรุณาส่งมอบคีย์นี้ให้ลูกค้าอย่างปลอดภัย*`,
           });

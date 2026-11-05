@@ -436,7 +436,7 @@ export class TokenProvisioningService {
     }
 
     // Fetch package details for formatting
-    let packageName = `NextAI [${tokenRecord.groupId}]`;
+    let packageName = `SealAPI [${tokenRecord.groupId}]`;
     if (tokenRecord.paymentId) {
       const payment = await prisma.payment.findUnique({
         where: { id: tokenRecord.paymentId },
