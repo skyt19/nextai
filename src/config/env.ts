@@ -122,10 +122,16 @@ export const envSchema = baseEnvSchema
   })
   .transform((data) => {
     const effectiveUpstream = data.NEWAPI_BASE_URL || data.UPSTREAM_BASE_URL || 'http://127.0.0.1:3000/v1';
+    const effectivePublic =
+      data.PUBLIC_API_BASE_URL && !data.PUBLIC_API_BASE_URL.includes('localhost:12345')
+        ? data.PUBLIC_API_BASE_URL
+        : data.NEWAPI_PUBLIC_ENDPOINT || effectiveUpstream;
+
     return {
       ...data,
       NEWAPI_BASE_URL: effectiveUpstream,
       UPSTREAM_BASE_URL: effectiveUpstream,
+      PUBLIC_API_BASE_URL: effectivePublic,
       ENCRYPTION_SECRET: data.ENCRYPTION_SECRET || DEV_PLACEHOLDER_SECRET,
     };
   });
