@@ -91,10 +91,23 @@ export class ReviewHandler {
             });
           }
         } else {
+          // Extract specific quota for THIS payment from calculation snapshot
+          let paymentQuota = '5.00';
+          try {
+            const snap = JSON.parse(payment.calculationSnapshot);
+            paymentQuota =
+              snap.customer_quota_cny ||
+              snap.display_reference_value_cny ||
+              snap.assigned_quota_cny ||
+              '5.00';
+          } catch {
+            // fallback
+          }
+
           const approvedEmbed = BotEmbeds.paymentApproved({
             packageName: payment.package.name,
             groupId: payment.package.groupId,
-            assignedQuotaCny: customerProfile.balance,
+            assignedQuotaCny: paymentQuota,
             plainTextApiKey: newlyIssuedApiKey,
             gatewayUrl: env.NEWAPI_PUBLIC_ENDPOINT,
           });
