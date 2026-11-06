@@ -77,4 +77,63 @@ export const adminSlashCommands = [
     .addBooleanOption((opt) =>
       opt.setName('refresh').setDescription('บังคับดึงข้อมูลล่าสุดจาก Frankfurter API ทันที')
     ),
+
+  new SlashCommandBuilder()
+    .setName('issue-key')
+    .setDescription('ออก API Key ให้ผู้ใช้ NewAPI กำหนด Request เองตามสูตรต้นทุน x มาร์กอัป')
+    .addStringOption((opt) =>
+      opt
+        .setName('group')
+        .setDescription('กลุ่มโมเดล AI (NxG1, NxGE, NxGC)')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Group A [NxG1] - Gemini Flash (ต้นทุน ¥0.02, Markup 2.5)', value: 'NxG1' },
+          { name: 'Group E [NxGE] - Gemini Pro (ต้นทุน ¥0.03, Markup 3.0)', value: 'NxGE' },
+          { name: 'Group Claude [NxGC] - Claude 3.5/3.7/Opus (ต้นทุน ¥0.03, Markup 2.5)', value: 'NxGC' }
+        )
+    )
+    .addIntegerOption((opt) =>
+      opt
+        .setName('requests')
+        .setDescription('จำนวน Request ที่ต้องการ (เช่น 100, 200, 500, 1000)')
+        .setRequired(true)
+        .setMinValue(1)
+    )
+    .addUserOption((opt) =>
+      opt
+        .setName('user')
+        .setDescription('เลือกผู้ใช้งาน Discord ในเซิร์ฟเวอร์ที่ต้องการออกคีย์ให้')
+        .setRequired(false)
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName('user_id')
+        .setDescription('Discord User ID ของผู้ใช้ (กรณีพิมพ์เลข ID เอง)')
+        .setRequired(false)
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName('username')
+        .setDescription('ชื่อบัญชีผู้ใช้หรือระบุชื่อลูกค้า (Username)')
+        .setRequired(false)
+    )
+    .addNumberOption((opt) =>
+      opt
+        .setName('markup')
+        .setDescription('ตัวคูณ Markup (ค่าเริ่มต้น: 2.5 หรือ 3.0 ตามกลุ่ม)')
+        .setRequired(false)
+        .setMinValue(1.0)
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName('custom_name')
+        .setDescription('กำหนดชื่อ Token เองแบบระบุเฉพาะเจาะจง (ถ้าไม่ระบุจะตั้งอัตโนมัติตามรูปแบบมาตรฐาน)')
+        .setRequired(false)
+    )
+    .addBooleanOption((opt) =>
+      opt
+        .setName('dm_customer')
+        .setDescription('ส่ง API Key และวิธีใช้งานเข้า DM ของลูกค้าทันทีหรือไม่ (ค่าเริ่มต้น: True)')
+        .setRequired(false)
+    ),
 ];

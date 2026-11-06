@@ -234,24 +234,39 @@ export class NewApiManagementService {
     }
 
     // In New API v1.0.0-rc.47, POST /api/token/ returns { success: true, message: "" } without data payload.
-    // When New API returns success without key in payload, retrieve the newly created token in read-only mode from local DB.
+    // When New API returns success without key in payload, retrieve the newly created token in read-only mode from DB (PostgreSQL / SQLite).
     if ((!key || key.trim() === '') && response.success === true) {
       try {
-        const { DatabaseSync } = await import('node:sqlite');
-        const oneApiDbPath = 'C:\\Users\\ctarv\\Documents\\new-api\\data\\one-api.db';
-        const db = new DatabaseSync(oneApiDbPath, { readOnly: true });
-        const row = db
-          .prepare(
-            `SELECT id, key, name, \`group\`, remain_quota FROM tokens WHERE name = ? AND deleted_at IS NULL ORDER BY id DESC LIMIT 1`
-          )
-          .all(input.name)[0] as any;
-
-        if (row && row.key) {
+        const { getPrismaClient } = await import('../db/client.js');
+        const prisma = getPrismaClient();
+        const rows = await prisma.$queryRawUnsafe<any[]>(
+          `SELECT id, key, name, "group", remain_quota FROM tokens WHERE name = $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 1`,
+          input.name
+        );
+        if (rows && rows.length > 0 && rows[0]?.key) {
+          const row = rows[0];
           key = row.key.startsWith('sk-') ? row.key : `sk-${row.key}`;
-          id = row.id;
+          id = typeof row.id === 'bigint' ? Number(row.id) : Number(row.id);
         }
       } catch {
-        // Fallback for isolated unit test environments
+        // Fallback for local sqlite if configured
+        try {
+          const { DatabaseSync } = await import('node:sqlite');
+          const oneApiDbPath = 'C:\\Users\\ctarv\\Documents\\new-api\\data\\one-api.db';
+          const db = new DatabaseSync(oneApiDbPath, { readOnly: true });
+          const row = db
+            .prepare(
+              `SELECT id, key, name, \`group\`, remain_quota FROM tokens WHERE name = ? AND deleted_at IS NULL ORDER BY id DESC LIMIT 1`
+            )
+            .all(input.name)[0] as any;
+
+          if (row && row.key) {
+            key = row.key.startsWith('sk-') ? row.key : `sk-${row.key}`;
+            id = row.id;
+          }
+        } catch {
+          // Fallback for isolated unit test environments
+        }
       }
     }
 

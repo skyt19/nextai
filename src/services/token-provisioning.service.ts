@@ -50,6 +50,32 @@ export interface ProvisionResult {
   requiresAdminReconciliation?: boolean;
 }
 
+export interface IssueManualTokenInput {
+  groupId: ModelGroupId | string;
+  requests: number;
+  discordUserId?: string;
+  username?: string;
+  markup?: number;
+  customTokenName?: string;
+}
+
+export interface IssueManualTokenResult {
+  plainTextKey: string;
+  tokenName: string;
+  groupId: string;
+  groupDisplayName: string;
+  requests: number;
+  baseCostCny: number;
+  markup: number;
+  quotaCny: Decimal;
+  quotaUnits: number;
+  newApiTokenId?: number;
+  allowedModels: string[];
+  gatewayUrl: string;
+  discordUserId: string;
+  username: string;
+}
+
 export class TokenProvisioningService {
   private static inFlightLocks = new Set<string>();
 
@@ -773,5 +799,175 @@ export class TokenProvisioningService {
     });
 
     return deliveryResult;
+  }
+
+  /**
+   * Manually issues an API Key for a customer based on requested requests count and standard cost formula.
+   * Quota formula: Quota (CNY) = Base Cost × Markup × Requests
+   */
+  public async issueManualToken(input: IssueManualTokenInput): Promise<IssueManualTokenResult> {
+    const prisma = getPrismaClient();
+    const groupId = input.groupId as ModelGroupId;
+
+    if (![MODEL_GROUPS.GROUP_A, MODEL_GROUPS.GROUP_E, MODEL_GROUPS.GROUP_CLAUDE].includes(groupId)) {
+      throw new TokenProvisioningError(`Invalid group ID: ${groupId}. Must be NxG1, NxGE, or NxGC.`);
+    }
+
+    if (!input.requests || input.requests <= 0) {
+      throw new TokenProvisioningError('Number of requests must be a positive integer.');
+    }
+
+    const baseCostCny = groupId === MODEL_GROUPS.GROUP_A ? 0.02 : 0.03;
+    const defaultMarkup = groupId === MODEL_GROUPS.GROUP_E ? 3.0 : 2.5;
+    const effectiveMarkup = input.markup !== undefined && input.markup > 0 ? input.markup : defaultMarkup;
+
+    // Quota formula: Base Cost × Markup × Requests
+    const quotaCny = new Decimal(baseCostCny).mul(effectiveMarkup).mul(input.requests);
+    const quotaUnits = this.calculateQuotaUnits(quotaCny);
+
+    const discordUserId = input.discordUserId?.trim() || `manual-${Date.now()}`;
+    const username = input.username?.trim() || `user-${discordUserId.slice(-4)}`;
+
+    const tokenName = input.customTokenName?.trim() || this.formatTokenName(groupId, discordUserId, username);
+    const newApiGroup = this.mapNextAiGroupToNewApi(groupId);
+    const allowedModelsStr = this.getAllowedModelsForGroup(groupId);
+    const allowedModels = allowedModelsStr.split(',').map((m) => m.trim()).filter(Boolean);
+
+    // Call New API to create token
+    const createResult = await this.newApiService.createToken({
+      name: tokenName,
+      remain_quota: quotaUnits,
+      expired_time: -1,
+      unlimited_quota: false,
+      model_limits_enabled: allowedModels.length > 0,
+      models: allowedModelsStr,
+      group: newApiGroup,
+      allow_ips: '',
+    });
+
+    const plainTextKey = createResult.key;
+    const keyHash = CryptoService.hashApiKey(plainTextKey);
+    const maskedIdentifier = CryptoService.maskApiKey(plainTextKey);
+    const encrypted = CryptoService.encryptSecret(plainTextKey, env.ENCRYPTION_SECRET);
+
+    // 1. Upsert Customer in DB
+    let customer = await prisma.customer.findUnique({
+      where: { discordUserId },
+    });
+
+    if (!customer) {
+      customer = await prisma.customer.create({
+        data: {
+          discordUserId,
+          username,
+          keyStatus: KEY_STATUS.ACTIVE,
+        },
+      });
+    }
+
+    // 2. Upsert CustomerModelGroup
+    await prisma.customerModelGroup.upsert({
+      where: {
+        customerId_groupId: {
+          customerId: customer.id,
+          groupId,
+        },
+      },
+      update: {},
+      create: {
+        customerId: customer.id,
+        groupId,
+      },
+    });
+
+    const safeTokenIdentifier = createResult.id
+      ? `token-${createResult.id}-${customer.id.slice(0, 6)}`
+      : `${maskedIdentifier}-${customer.id.slice(0, 8)}`;
+
+    // 3. Upsert CustomerTokenRecord
+    await prisma.customerTokenRecord.upsert({
+      where: {
+        customerId_groupId: {
+          customerId: customer.id,
+          groupId,
+        },
+      },
+      update: {
+        tokenIdentifier: safeTokenIdentifier,
+        tokenName,
+        newApiTokenId: createResult.id ?? null,
+        quotaCny: quotaCny.toFixed(4),
+        status: KEY_STATUS.ACTIVE,
+        provisioningStatus: PROVISIONING_STATUS.DELIVERED,
+        keyHash,
+        encryptedKey: encrypted.encrypted,
+        iv: encrypted.iv,
+        authTag: encrypted.authTag,
+        deliveredAt: new Date(),
+        lastError: null,
+      },
+      create: {
+        customerId: customer.id,
+        groupId,
+        tokenIdentifier: safeTokenIdentifier,
+        tokenName,
+        newApiTokenId: createResult.id ?? null,
+        quotaCny: quotaCny.toFixed(4),
+        status: KEY_STATUS.ACTIVE,
+        provisioningStatus: PROVISIONING_STATUS.DELIVERED,
+        keyHash,
+        encryptedKey: encrypted.encrypted,
+        iv: encrypted.iv,
+        authTag: encrypted.authTag,
+        deliveredAt: new Date(),
+      },
+    });
+
+    // 4. Audit Log
+    await prisma.auditLog.create({
+      data: {
+        actorDiscordId: discordUserId,
+        action: 'MANUAL_TOKEN_ISSUED',
+        targetType: 'TOKEN',
+        targetId: createResult.id ? String(createResult.id) : maskedIdentifier,
+        details: JSON.stringify({
+          groupId,
+          requests: input.requests,
+          baseCostCny,
+          markup: effectiveMarkup,
+          quotaCny: quotaCny.toFixed(4),
+          quotaUnits,
+          tokenName,
+        }),
+      },
+    });
+
+    let groupDisplayName = `Group Claude [NxGC]`;
+    if (groupId === MODEL_GROUPS.GROUP_A) {
+      groupDisplayName = 'Group A [NxG1] (Gemini Flash & Fast)';
+    } else if (groupId === MODEL_GROUPS.GROUP_E) {
+      groupDisplayName = 'Group E [NxGE] (Gemini Pro & Search)';
+    } else if (groupId === MODEL_GROUPS.GROUP_CLAUDE) {
+      groupDisplayName = 'Group Claude [NxGC] (Claude 3.5/3.7 & Opus)';
+    }
+
+    const gatewayUrl = env.NEWAPI_PUBLIC_ENDPOINT || 'https://next-newapi.onrender.com/v1';
+
+    return {
+      plainTextKey,
+      tokenName,
+      groupId,
+      groupDisplayName,
+      requests: input.requests,
+      baseCostCny,
+      markup: effectiveMarkup,
+      quotaCny,
+      quotaUnits,
+      newApiTokenId: createResult.id,
+      allowedModels,
+      gatewayUrl,
+      discordUserId,
+      username,
+    };
   }
 }

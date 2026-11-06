@@ -19,6 +19,7 @@ import { TicketLoggerService } from './services/ticket-logger.service.js';
 import { TicketHandler } from './handlers/ticket.handler.js';
 import { SlipHandler } from './handlers/slip.handler.js';
 import { ReviewHandler } from './handlers/review.handler.js';
+import { TokenProvisioningService } from '../services/token-provisioning.service.js';
 import { BotEmbeds } from './ui/embeds.js';
 import { TicketPanelUI } from './ui/ticket-panel.js';
 import { customerSlashCommands, adminSlashCommands } from './commands/definitions.js';
@@ -48,6 +49,7 @@ export class NextAiDiscordBot {
   public readonly frankfurterService: FrankfurterService;
   public readonly ticketService: TicketService;
   public readonly ticketLogger: TicketLoggerService;
+  public readonly tokenProvisioningService: TokenProvisioningService;
 
   public readonly ticketHandler: TicketHandler;
   public readonly slipHandler: SlipHandler;
@@ -73,6 +75,7 @@ export class NextAiDiscordBot {
     this.catalogService = new ModelCatalogService();
     this.ticketService = new TicketService();
     this.ticketLogger = new TicketLoggerService(this.client, config.ticketLogChannelId || '');
+    this.tokenProvisioningService = new TokenProvisioningService();
 
     this.ticketHandler = new TicketHandler(
       this.ticketService,
@@ -219,7 +222,7 @@ export class NextAiDiscordBot {
     }
 
     // Admin commands
-    else if (['admin', 'ticket-panel', 'payment-review', 'customer', 'customer-key', 'rates'].includes(commandName)) {
+    else if (['admin', 'ticket-panel', 'payment-review', 'customer', 'customer-key', 'rates', 'issue-key'].includes(commandName)) {
       if (!this.reviewHandler.isAuthorizedAdmin(userId)) {
         await interaction.reply({
           content: '⛔ **ไม่มีสิทธิ์:** คำสั่งนี้จำกัดสิทธิ์เฉพาะผู้ดูแลระบบเท่านั้น',
@@ -324,6 +327,57 @@ export class NextAiDiscordBot {
         } else if (action === 'activate') {
           await this.customerService.updateKeyStatus(targetUserId, KEY_STATUS.ACTIVE);
           await interaction.editReply({ content: `✅ เปิดใช้งาน API Key สำหรับ <@${targetUserId}> เรียบร้อยแล้ว (ACTIVE)` });
+        }
+      } else if (commandName === 'issue-key') {
+        await interaction.deferReply({ ephemeral: true });
+
+        const groupId = interaction.options.getString('group', true);
+        const requests = interaction.options.getInteger('requests', true);
+        const targetUser = interaction.options.getUser('user');
+        const manualUserId = interaction.options.getString('user_id');
+        const manualUsername = interaction.options.getString('username');
+        const customMarkup = interaction.options.getNumber('markup') || undefined;
+        const customName = interaction.options.getString('custom_name') || undefined;
+        const dmCustomer = interaction.options.getBoolean('dm_customer') ?? true;
+
+        const finalUserId = targetUser?.id || manualUserId?.trim() || `manual-${Date.now()}`;
+        const finalUsername =
+          targetUser?.username ||
+          manualUsername?.trim() ||
+          (manualUserId ? `user-${manualUserId.slice(-4)}` : `customer-${finalUserId.slice(-4)}`);
+
+        try {
+          const result = await this.tokenProvisioningService.issueManualToken({
+            groupId,
+            requests,
+            discordUserId: finalUserId,
+            username: finalUsername,
+            markup: customMarkup,
+            customTokenName: customName,
+          });
+
+          const embed = BotEmbeds.manualKeyIssued(result);
+
+          let dmNotice = '';
+          if (dmCustomer && targetUser) {
+            try {
+              const dmEmbed = BotEmbeds.manualKeyCustomerDm(result);
+              await targetUser.send({ embeds: [dmEmbed] });
+              dmNotice = `\n\n📩 *ส่งข้อมูล Key และคู่มือการใช้งานไปยังข้อความส่วนตัว (DM) ของ <@${targetUser.id}> เรียบร้อยแล้ว*`;
+            } catch (dmErr: any) {
+              dmNotice = `\n\n⚠️ *ไม่สามารถส่ง DM ไปยังผู้ใช้ได้ (อาจเนื่องจากตั้งค่าปิดรับข้อความ direct message)*`;
+            }
+          }
+
+          await interaction.editReply({
+            content: `✅ **ออก SealAPI Key สำเร็จเรียบร้อยแล้ว**${dmNotice}`,
+            embeds: [embed],
+          });
+        } catch (err: any) {
+          console.error('[DiscordBot] Error issuing manual key:', err);
+          await interaction.editReply({
+            content: `❌ **เกิดข้อผิดพลาดในการออก API Key:** ${err.message}`,
+          });
         }
       }
     }

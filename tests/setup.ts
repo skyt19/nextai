@@ -1,13 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import dotenv from 'dotenv';
 
-// 1. Isolate Database: Copy prisma/dev.db to prisma/test.db so dev.db is NEVER touched or modified during tests
-const devDbPath = path.resolve(process.cwd(), 'prisma', 'dev.db');
-const testDbPath = path.resolve(process.cwd(), 'prisma', 'test.db');
-if (fs.existsSync(devDbPath)) {
-  fs.copyFileSync(devDbPath, testDbPath);
+dotenv.config();
+
+// Ensure PostgreSQL DATABASE_URL is available for Prisma
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL.startsWith('file:')) {
+  process.env.DATABASE_URL =
+    process.env.TEST_DATABASE_URL ||
+    'postgresql://postgres.rotkeqiskjwzechfporj:0926671327df@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true';
 }
-process.env.DATABASE_URL = 'file:./test.db';
 
 // 2. Set fake test credentials to guarantee real keys are never loaded or probed
 process.env.NODE_ENV = 'test';
