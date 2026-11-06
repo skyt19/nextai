@@ -1,4 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
+import { Decimal } from 'decimal.js';
 import { CustomerProfile } from '../../types/customer.js';
 import { CalculationSnapshot } from '../../services/calculator.service.js';
 import { env } from '../../config/env.js';
@@ -272,6 +273,63 @@ export class BotEmbeds {
       .setDescription(desc)
       .setColor(0x57f287)
       .setFooter({ text: 'SealAPI • Your Smart Choice for Claude' })
+      .setTimestamp();
+  }
+
+  /**
+   * Embed notifying admin of the financial cost and gross profit breakdown for the issued key.
+   */
+  public static adminProfitReport(params: {
+    username: string;
+    tokenName: string;
+    groupId: string;
+    groupDisplayName: string;
+    requests: number;
+    baseCostCny: number;
+    markup: number;
+    cnyToThbRate?: number;
+    customSellingPriceThb?: number;
+  }): EmbedBuilder {
+    const fxRate = params.cnyToThbRate || 5.08;
+    const totalCostCny = new Decimal(params.baseCostCny).mul(params.requests);
+    const totalCostThb = totalCostCny.mul(fxRate);
+
+    // Selling price: if 250 requests (Starter Pack), standard IG price is 99 THB, otherwise calculated from markup
+    const defaultSellingPriceThb =
+      params.requests === 250
+        ? new Decimal(99)
+        : totalCostCny.mul(params.markup).mul(fxRate).toDecimalPlaces(0);
+    const sellingPriceThb = params.customSellingPriceThb
+      ? new Decimal(params.customSellingPriceThb)
+      : defaultSellingPriceThb;
+
+    const sellingPriceCny = totalCostCny.mul(params.markup);
+    const profitThb = sellingPriceThb.minus(totalCostThb);
+    const profitCny = sellingPriceCny.minus(totalCostCny);
+    const marginPercent = sellingPriceThb.isPositive()
+      ? profitThb.div(sellingPriceThb).mul(100)
+      : new Decimal(0);
+
+    const desc =
+      `📋 **สรุปรายการออกคีย์สำหรับแอดมิน**\n` +
+      `• **ผู้ใช้งาน:** **${params.username}**\n` +
+      `• **Token Name:** \`${params.tokenName}\`\n` +
+      `• **กลุ่มโมเดล:** **${params.groupDisplayName}** (\`${params.groupId}\`)\n` +
+      `• **จำนวนคำขอ:** **${params.requests.toLocaleString('en-US')} Requests**\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `### 💰 **ประมาณการรายรับและกำไรสุทธิ**\n` +
+      `• 💵 **ราคาขายลูกค้า (Selling Price):** **฿${sellingPriceThb.toFixed(2)} THB** *(~¥${sellingPriceCny.toFixed(2)} CNY)*\n` +
+      `• 📉 **ต้นทุนผู้ให้บริการ (Provider Cost):** **฿${totalCostThb.toFixed(2)} THB** *(¥${totalCostCny.toFixed(2)} CNY @ ¥${params.baseCostCny}/req)*\n` +
+      `• 📈 **กำไรสุทธิโดยประมาณ (Gross Profit):** **+฿${profitThb.toFixed(2)} THB** *(+¥${profitCny.toFixed(2)} CNY)*\n` +
+      `• 📊 **อัตรากำไร (Profit Margin):** **${marginPercent.toFixed(1)}%**\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `*อัตราแลกเปลี่ยนอ้างอิง: 1 CNY = ฿${new Decimal(fxRate).toFixed(4)} THB*`;
+
+    return new EmbedBuilder()
+      .setTitle('📊 ข้อมูลต้นทุนและกำไรสำหรับแอดมิน (Admin Profit & Cost Report)')
+      .setDescription(desc)
+      .setColor(0xf1c40f) // Gold / Amber
+      .setFooter({ text: 'SealAPI Financial Intelligence' })
       .setTimestamp();
   }
 }

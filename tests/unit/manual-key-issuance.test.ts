@@ -132,4 +132,29 @@ describe('Manual Key Issuance & /issue-key Command Tests', () => {
     expect(data.description).not.toContain('เครดิตในระบบ');
     expect(data.description).not.toContain('โมเดลที่รองรับ');
   });
+
+  it('should format BotEmbeds.adminProfitReport with exact cost, revenue, profit, and margin breakdown', () => {
+    const embed = BotEmbeds.adminProfitReport({
+      username: 'snxrff_buyer',
+      tokenName: 'NxGC - snxrff_buyer',
+      groupId: 'NxGC',
+      groupDisplayName: 'Group Claude [NxGC] (Claude 3.5/3.7 & Opus)',
+      requests: 250,
+      baseCostCny: 0.03,
+      markup: 2.5,
+      cnyToThbRate: 5.08,
+    });
+
+    const data = embed.toJSON();
+    expect(data.title).toContain('ข้อมูลต้นทุนและกำไรสำหรับแอดมิน');
+    expect(data.color).toBe(0xf1c40f); // Gold
+    expect(data.description).toContain('ราคาขายลูกค้า');
+    expect(data.description).toContain('99.00 THB');
+    expect(data.description).toContain('ต้นทุนผู้ให้บริการ');
+    expect(data.description).toContain('38.10 THB');
+    expect(data.description).toContain('กำไรสุทธิโดยประมาณ');
+    expect(data.description).toContain('60.90 THB');
+    expect(data.description).toContain('อัตรากำไร');
+    expect(data.description).toContain('61.5%');
+  });
 });

@@ -354,7 +354,27 @@ export class NextAiDiscordBot {
             customTokenName: customName,
           });
 
-          const embed = BotEmbeds.manualKeyIssued(result);
+          let fxRate = 5.08;
+          try {
+            const rates = await this.frankfurterService.getRates();
+            if (rates?.rates?.THB) {
+              fxRate = rates.rates.THB.toNumber();
+            }
+          } catch {
+            // Fallback rate
+          }
+
+          const customerEmbed = BotEmbeds.manualKeyIssued(result);
+          const adminProfitEmbed = BotEmbeds.adminProfitReport({
+            username: result.username,
+            tokenName: result.tokenName,
+            groupId: result.groupId,
+            groupDisplayName: result.groupDisplayName,
+            requests: result.requests,
+            baseCostCny: result.baseCostCny,
+            markup: result.markup,
+            cnyToThbRate: fxRate,
+          });
 
           let dmNotice = '';
           if (dmCustomer && targetUser) {
@@ -369,9 +389,15 @@ export class NextAiDiscordBot {
 
           await interaction.editReply({
             content:
-              `✅ **ออก SealAPI Key สำเร็จเรียบร้อยแล้ว**\n` +
+              `✅ **ออก SealAPI Key สำเร็จเรียบร้อยแล้ว** (ส่งข้อมูลด้านล่างให้ลูกค้าใน IG ได้เลยครับ)\n` +
               `🎬 คลิปสอนวิธีใช้งาน: https://youtu.be/9KkDWaEsuHc${dmNotice}`,
-            embeds: [embed],
+            embeds: [customerEmbed],
+          });
+
+          // Send admin cost and profit breakdown as another separate message
+          await interaction.followUp({
+            embeds: [adminProfitEmbed],
+            ephemeral: true,
           });
         } catch (err: any) {
           console.error('[DiscordBot] Error issuing manual key:', err);
