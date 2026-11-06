@@ -331,20 +331,18 @@ export class NextAiDiscordBot {
       } else if (commandName === 'issue-key') {
         await interaction.deferReply({ ephemeral: true });
 
-        const groupId = interaction.options.getString('group', true);
+        const rawUsername = interaction.options.getString('username', true);
         const requests = interaction.options.getInteger('requests', true);
-        const targetUser = interaction.options.getUser('user');
-        const manualUserId = interaction.options.getString('user_id');
-        const manualUsername = interaction.options.getString('username');
+        const groupId = interaction.options.getString('group', true);
         const customMarkup = interaction.options.getNumber('markup') || undefined;
         const customName = interaction.options.getString('custom_name') || undefined;
+        const targetUser = interaction.options.getUser('user');
         const dmCustomer = interaction.options.getBoolean('dm_customer') ?? true;
 
-        const finalUserId = targetUser?.id || manualUserId?.trim() || `manual-${Date.now()}`;
-        const finalUsername =
-          targetUser?.username ||
-          manualUsername?.trim() ||
-          (manualUserId ? `user-${manualUserId.slice(-4)}` : `customer-${finalUserId.slice(-4)}`);
+        const finalUsername = rawUsername.trim();
+        const finalUserId =
+          targetUser?.id ||
+          `manual-${finalUsername.toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}-${Date.now().toString().slice(-6)}`;
 
         try {
           const result = await this.tokenProvisioningService.issueManualToken({
@@ -363,14 +361,16 @@ export class NextAiDiscordBot {
             try {
               const dmEmbed = BotEmbeds.manualKeyCustomerDm(result);
               await targetUser.send({ embeds: [dmEmbed] });
-              dmNotice = `\n\n📩 *ส่งข้อมูล Key และคู่มือการใช้งานไปยังข้อความส่วนตัว (DM) ของ <@${targetUser.id}> เรียบร้อยแล้ว*`;
+              dmNotice = `\n📩 *ส่งข้อมูล Key และคลิปสอนการใช้งานไปยัง DM ของ <@${targetUser.id}> เรียบร้อยแล้ว*`;
             } catch (dmErr: any) {
-              dmNotice = `\n\n⚠️ *ไม่สามารถส่ง DM ไปยังผู้ใช้ได้ (อาจเนื่องจากตั้งค่าปิดรับข้อความ direct message)*`;
+              dmNotice = `\n⚠️ *ไม่สามารถส่ง DM ไปยังผู้ใช้ได้ (เนื่องจากปิดรับข้อความ direct message)*`;
             }
           }
 
           await interaction.editReply({
-            content: `✅ **ออก SealAPI Key สำเร็จเรียบร้อยแล้ว**${dmNotice}`,
+            content:
+              `✅ **ออก SealAPI Key สำเร็จเรียบร้อยแล้ว**\n` +
+              `🎬 คลิปสอนวิธีใช้งาน: https://youtu.be/9KkDWaEsuHc${dmNotice}`,
             embeds: [embed],
           });
         } catch (err: any) {

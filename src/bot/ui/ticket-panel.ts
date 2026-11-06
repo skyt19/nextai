@@ -77,8 +77,9 @@ export class TicketPanelUI {
       .setDescription(
         `กลุ่มโมเดลที่เลือก: **${groupDisplayName}**\n\n` +
           `กรุณาเลือก **จำนวน Reference Requests** ที่ต้องการสั่งซื้อจากเมนูด้านล่างนี้:\n\n` +
-          `• **100 Reference Requests**\n` +
+          `• **250 Reference Requests (Starter Pack)**\n` +
           `• **500 Reference Requests**\n` +
+          `• **750 Reference Requests**\n` +
           `• **1,000 Reference Requests**\n\n` +
           `*ระบบจะคำนวณยอดชำระเงินสกุล THB ตามอัตราแลกเปลี่ยนจริงพร้อมแสดง QR Code ในขั้นตอนถัดไป*`
       )

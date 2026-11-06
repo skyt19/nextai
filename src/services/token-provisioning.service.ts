@@ -825,10 +825,15 @@ export class TokenProvisioningService {
     const quotaCny = new Decimal(baseCostCny).mul(effectiveMarkup).mul(input.requests);
     const quotaUnits = this.calculateQuotaUnits(quotaCny);
 
-    const discordUserId = input.discordUserId?.trim() || `manual-${Date.now()}`;
-    const username = input.username?.trim() || `user-${discordUserId.slice(-4)}`;
+    const username = input.username?.trim() || 'customer';
+    const isManualGeneratedId = !input.discordUserId || input.discordUserId.startsWith('manual-');
+    const discordUserId =
+      input.discordUserId?.trim() ||
+      `manual-${username.toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}-${Date.now().toString().slice(-6)}`;
 
-    const tokenName = input.customTokenName?.trim() || this.formatTokenName(groupId, discordUserId, username);
+    const tokenName =
+      input.customTokenName?.trim() ||
+      (isManualGeneratedId ? `${groupId} - ${username}` : this.formatTokenName(groupId, discordUserId, username));
     const newApiGroup = this.mapNextAiGroupToNewApi(groupId);
     const allowedModelsStr = this.getAllowedModelsForGroup(groupId);
     const allowedModels = allowedModelsStr.split(',').map((m) => m.trim()).filter(Boolean);

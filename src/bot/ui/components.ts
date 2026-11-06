@@ -49,23 +49,24 @@ export class BotComponents {
 
   /**
    * Stage 2: Select Reference Request Quantity (in Thai)
-   * Suggested quantities: 100, 500, 1,000 Reference Requests
+   * Quantities: 250 (Starter Pack), 500, 750, 1,000 Reference Requests
    */
   public static referenceRequestsSelectMenu(
     groupId: string,
-    quantities: number[] = [100, 500, 1000]
+    quantities: number[] = [250, 500, 750, 1000]
   ): ActionRowBuilder<StringSelectMenuBuilder> {
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId(`purchase_select_requests_${groupId}`)
       .setPlaceholder('เลือกจำนวน Reference Requests...')
       .addOptions(
-        quantities.map((q) =>
-          new StringSelectMenuOptionBuilder()
-            .setLabel(`${q.toLocaleString('en-US')} Reference Requests`)
+        quantities.map((q) => {
+          const isStarter = q === 250;
+          return new StringSelectMenuOptionBuilder()
+            .setLabel(`${q.toLocaleString('en-US')} Reference Requests${isStarter ? ' (Starter Pack)' : ''}`)
             .setDescription(`แพ็กเกจ ${q.toLocaleString('en-US')} คำขออ้างอิงสำหรับกลุ่ม [${groupId}]`)
             .setValue(q.toString())
-            .setEmoji('📦')
-        )
+            .setEmoji(isStarter ? '⭐' : '📦');
+        })
       );
 
     return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);

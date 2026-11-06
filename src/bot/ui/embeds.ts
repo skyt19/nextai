@@ -189,8 +189,9 @@ export class BotEmbeds {
   }
 
   /**
-   * Embed for manual API key issuance requested by admin.
-   * Prominently displays Endpoint, Key, and Group Model as requested.
+   * Embed for manual API key issuance requested by admin (Optimized for IG sales).
+   * Prominently displays: Endpoint, Key, Username, Token Name, Request, and Video Guide.
+   * Internal formulas, base costs, user IDs, and model IDs are omitted per admin specification.
    */
   public static manualKeyIssued(params: {
     plainTextKey: string;
@@ -198,57 +199,36 @@ export class BotEmbeds {
     groupId: string;
     groupDisplayName: string;
     requests: number;
-    baseCostCny: number;
-    markup: number;
-    quotaCny: { toFixed: (n: number) => string } | string | number;
-    quotaUnits: number;
-    allowedModels?: string[];
     gatewayUrl?: string;
-    discordUserId: string;
     username: string;
+    videoUrl?: string;
   }): EmbedBuilder {
     const endpoint = params.gatewayUrl || env.NEWAPI_PUBLIC_ENDPOINT || 'https://next-newapi.onrender.com/v1';
-    const quotaCnyStr =
-      typeof params.quotaCny === 'object' && params.quotaCny !== null && 'toFixed' in params.quotaCny
-        ? params.quotaCny.toFixed(2)
-        : Number(params.quotaCny).toFixed(2);
+    const video = params.videoUrl || 'https://youtu.be/9KkDWaEsuHc';
+    const requestText =
+      params.requests === 250
+        ? '250 Requests (Starter Pack)'
+        : `${params.requests.toLocaleString('en-US')} Requests`;
 
-    let desc =
-      `## 🔑 SealAPI — ออก API Key สำเร็จ (Manual Token Issued)\n\n` +
-      `**Endpoint :** \`${endpoint}\`\n` +
-      `**Key :** \`${params.plainTextKey}\`\n` +
-      `**Group Model :** **${params.groupDisplayName}** (\`${params.groupId}\`)\n\n` +
+    const desc =
+      `🌐 **Endpoint :** \`${endpoint}\`\n` +
+      `🔑 **Key :** \`${params.plainTextKey}\`\n` +
+      `👤 **ผู้ใช้งาน :** **${params.username}**\n` +
+      `🏷️ **Token Name :** \`${params.tokenName}\`\n` +
+      `📦 **Request :** **${requestText}**\n` +
+      `🤖 **Group Model :** **${params.groupDisplayName}**\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `### 📋 ข้อมูลผู้ใช้งานและรายละเอียดโควต้า\n` +
-      `• **ผู้ใช้งาน:** <@${params.discordUserId}> (\`${params.username}\`)\n` +
-      `• **User ID:** \`${params.discordUserId}\`\n` +
-      `• **Token Name:** \`${params.tokenName}\`\n` +
-      `• **จำนวนคำขอ (Requests):** **${params.requests.toLocaleString('en-US')} Requests**\n` +
-      `• **สูตรคำนวณ:** ต้นทุน ¥${params.baseCostCny} × ตัวคูณ ${params.markup} × ${params.requests} req\n` +
-      `• **โควต้าที่ได้รับ (CNY):** **¥${quotaCnyStr} CNY**\n` +
-      `• **เครดิตในระบบ NewAPI:** **${params.quotaUnits.toLocaleString('en-US')} Quota Units**\n\n` +
-      `### 🔑 คัดลอก API Key โดยตรง:\n` +
+      `### 🔑 API Key สำหรับคัดลอก:\n` +
       `\`\`\`\n${params.plainTextKey}\n\`\`\`\n` +
-      `⚠️ *คำเตือน: โปรดเก็บรักษา API Key นี้อย่างปลอดภัย หลีกเลี่ยงการเปิดเผยในพื้นที่สาธารณะ*\n\n`;
-
-    if (params.allowedModels && params.allowedModels.length > 0) {
-      const displayModels = params.allowedModels.slice(0, 6).join('`, `');
-      const extra = params.allowedModels.length > 6 ? ` และอีก ${params.allowedModels.length - 6} โมเดล` : '';
-      desc += `### 🤖 โมเดลที่รองรับในกลุ่มนี้:\n\`${displayModels}\`${extra}\n\n`;
-    }
-
-    desc +=
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `### 🚀 วิธีการเชื่อมต่อใช้งาน (Quick Setup Guide)\n` +
-      `• **Base URL / Endpoint:** \`${endpoint}\`\n` +
-      `• **API Key (Bearer Token):** \`${params.plainTextKey}\`\n` +
-      `• รองรับทั้ง Cursor, NextChat, LibreChat, Cline, Roo Code, SillyTavern, Python SDK\n`;
+      `🎬 **คลิปสอนการเชื่อมต่อและวิธีใช้งาน (สำหรับลูกค้า):**\n` +
+      `> 🔗 ${video}\n\n` +
+      `💻 *คำแนะนำ: ใช้งานผ่านโปรแกรมใน Computer หรือ Laptop (เช่น Cursor, NextChat, LibreChat) นำ Base URL และ API Key ด้านบนไปใส่ในช่อง Bearer Token*`;
 
     return new EmbedBuilder()
-      .setTitle('✨ จัดการออก API Key สำเร็จเรียบร้อยแล้ว')
+      .setTitle('✨ SealAPI — ข้อมูลการเข้าใช้งาน API (API Access Credentials)')
       .setDescription(desc)
       .setColor(0x00d26a)
-      .setFooter({ text: 'SealAPI Hub • Manual Token Provisioning System' })
+      .setFooter({ text: 'SealAPI • Your Smart Choice for Claude' })
       .setTimestamp();
   }
 
@@ -257,41 +237,41 @@ export class BotEmbeds {
    */
   public static manualKeyCustomerDm(params: {
     plainTextKey: string;
+    tokenName: string;
     groupDisplayName: string;
     groupId: string;
     requests: number;
-    allowedModels?: string[];
     gatewayUrl?: string;
+    username: string;
+    videoUrl?: string;
   }): EmbedBuilder {
     const endpoint = params.gatewayUrl || env.NEWAPI_PUBLIC_ENDPOINT || 'https://next-newapi.onrender.com/v1';
+    const video = params.videoUrl || 'https://youtu.be/9KkDWaEsuHc';
+    const requestText =
+      params.requests === 250
+        ? '250 Requests (Starter Pack)'
+        : `${params.requests.toLocaleString('en-US')} Requests`;
 
-    let desc =
-      `ยินดีต้อนรับสู่บริการ **SealAPI**! แอดมินได้ทำการออก API Key ใหม่สำหรับท่านเรียบร้อยแล้ว:\n\n` +
-      `**Endpoint :** \`${endpoint}\`\n` +
-      `**Key :** \`${params.plainTextKey}\`\n` +
-      `**Group Model :** **${params.groupDisplayName}**\n` +
-      `**จำนวนคำขอ:** **${params.requests.toLocaleString('en-US')} Requests**\n\n` +
-      `### 🔑 นำ API Key ด้านล่างนี้ไปใช้งาน:\n` +
+    const desc =
+      `ยินดีต้อนรับสู่บริการ **SealAPI**! ข้อมูล API Key สำหรับเข้าใช้งานของท่าน:\n\n` +
+      `🌐 **Endpoint :** \`${endpoint}\`\n` +
+      `🔑 **Key :** \`${params.plainTextKey}\`\n` +
+      `👤 **ผู้ใช้งาน :** **${params.username}**\n` +
+      `🏷️ **Token Name :** \`${params.tokenName}\`\n` +
+      `📦 **Request :** **${requestText}**\n` +
+      `🤖 **Group Model :** **${params.groupDisplayName}**\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `### 🔑 คัดลอก API Key โดยตรง:\n` +
       `\`\`\`\n${params.plainTextKey}\n\`\`\`\n` +
-      `⚠️ *คำแนะนำด้านความปลอดภัย: กรุณาคัดลอกและบันทึกคีย์นี้ไว้ใช้งาน ห้ามส่งต่อให้ผู้อื่น*\n\n`;
-
-    if (params.allowedModels && params.allowedModels.length > 0) {
-      const displayModels = params.allowedModels.slice(0, 6).join('`, `');
-      const extra = params.allowedModels.length > 6 ? ` และอีก ${params.allowedModels.length - 6} โมเดล` : '';
-      desc += `### 🤖 โมเดลที่พร้อมใช้งาน:\n\`${displayModels}\`${extra}\n\n`;
-    }
-
-    desc +=
-      `**วิธีตั้งค่าในโปรแกรม (Cursor, NextChat, LibreChat, etc.):**\n` +
-      `• **Base URL:** \`${endpoint}\`\n` +
-      `• **API Key:** นำ Key ด้านบนไปใส่ในช่อง Bearer Token\n\n` +
-      `หากมีข้อสงสัยหรือต้องการความช่วยเหลือ สามารถเปิด Ticket สอบถามทีมงานได้ตลอดเวลาครับ!`;
+      `🎬 **คลิปสอนการเชื่อมต่อและวิธีใช้งาน:**\n` +
+      `> 🔗 ${video}\n\n` +
+      `💻 *วิธีตั้งค่า: ใช้งานผ่านโปรแกรมใน Computer หรือ Laptop (เช่น Cursor, NextChat, LibreChat) โดยนำ Endpoint และ API Key ด้านบนไปใส่ในช่อง Bearer Token*`;
 
     return new EmbedBuilder()
-      .setTitle('🎉 คุณได้รับ API Key จาก SealAPI')
+      .setTitle('🎉 ข้อมูลเข้าใช้งาน SealAPI (API Access Credentials)')
       .setDescription(desc)
       .setColor(0x57f287)
-      .setFooter({ text: 'SealAPI Hub' })
+      .setFooter({ text: 'SealAPI • Your Smart Choice for Claude' })
       .setTimestamp();
   }
 }
