@@ -157,4 +157,56 @@ describe('Manual Key Issuance & /issue-key Command Tests', () => {
     expect(data.description).toContain('อัตรากำไร');
     expect(data.description).toContain('61.5%');
   });
+
+  it('should define the /set-balance admin slash command with autocomplete, requests, note, and mode', () => {
+    const cmd = adminSlashCommands.find((c) => c.name === 'set-balance');
+    expect(cmd).toBeDefined();
+
+    const json = cmd!.toJSON();
+    expect(json.name).toBe('set-balance');
+    expect(json.description).toContain('ปรับยอดโควต้า Token ใน NewAPI');
+
+    const optNames = json.options?.map((o: any) => o.name);
+    expect(optNames).toContain('token');
+    expect(optNames).toContain('requests');
+    expect(optNames).toContain('note');
+    expect(optNames).toContain('mode');
+
+    const tokenOpt: any = json.options?.find((o: any) => o.name === 'token');
+    expect(tokenOpt.autocomplete).toBe(true);
+    expect(tokenOpt.required).toBe(true);
+
+    const reqOpt: any = json.options?.find((o: any) => o.name === 'requests');
+    expect(reqOpt.required).toBe(true);
+  });
+
+  it('should format BotEmbeds.balanceUpdated with correct calculation, rounded requests, and note', () => {
+    const embed = BotEmbeds.balanceUpdated({
+      tokenId: 10,
+      tokenName: 'NxGC - somchai_ig',
+      maskedKey: 'sk-3xny...WlH',
+      groupId: 'NxGC',
+      groupDisplayName: 'Group Claude [NxGC] (Claude 3.5/3.7 & Opus)',
+      rawRequests: 249.7,
+      roundedRequests: 250,
+      baseCostCny: 0.03,
+      markup: 2.5,
+      quotaCny: new Decimal(18.75),
+      calculatedUnits: 1399254,
+      previousUnits: 500000,
+      newRemainUnits: 1399254,
+      mode: 'set',
+      note: 'เติมเงินเพิ่มจาก IG',
+    });
+
+    const data = embed.toJSON();
+    expect(data.title).toContain('ปรับปรุงยอดโควต้าสำเร็จ');
+    expect(data.color).toBe(0x00d26a);
+    expect(data.description).toContain('NxGC - somchai_ig');
+    expect(data.description).toContain('250 Requests');
+    expect(data.description).toContain('249.7 ➔ ปัดเศษเป็น **250**');
+    expect(data.description).toContain('¥18.75 CNY');
+    expect(data.description).toContain('1,399,254 Quota Units');
+    expect(data.description).toContain('เติมเงินเพิ่มจาก IG');
+  });
 });

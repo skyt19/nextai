@@ -135,4 +135,38 @@ export const adminSlashCommands = [
         .setDescription('ส่ง API Key และวิธีใช้งานเข้า DM ของลูกค้าทันทีหรือไม่ (ค่าเริ่มต้น: True)')
         .setRequired(false)
     ),
+
+  new SlashCommandBuilder()
+    .setName('set-balance')
+    .setDescription('ปรับยอดโควต้า Token ใน NewAPI ตามจำนวน Request และสูตรคำนวณ')
+    .addStringOption((opt) =>
+      opt
+        .setName('token')
+        .setDescription('เลือกหรือค้นหา Token / ผู้ใช้งานใน NewAPI (โหลดจากระบบ)')
+        .setRequired(true)
+        .setAutocomplete(true)
+    )
+    .addNumberOption((opt) =>
+      opt
+        .setName('requests')
+        .setDescription('จำนวน Request ที่ต้องการกำหนด (ใส่เลขไม่กลมได้ ระบบจะปัดเศษให้อัตโนมัติ)')
+        .setRequired(true)
+        .setMinValue(1)
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName('note')
+        .setDescription('บันทึกโน๊ตเพิ่มเติมหากมี (เช่น เติมเงิน IG, ปรับยอดตามสลิป)')
+        .setRequired(false)
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName('mode')
+        .setDescription('รูปแบบการปรับยอด (ตั้งค่ายอดใหม่ หรือ บวกเพิ่มจากยอดเดิม)')
+        .setRequired(false)
+        .addChoices(
+          { name: 'ตั้งค่ายอดใหม่ตามที่ระบุ (Set / Replace)', value: 'set' },
+          { name: 'บวกเพิ่มจากยอดคงเหลือเดิม (Add / Top-up)', value: 'add' }
+        )
+    ),
 ];

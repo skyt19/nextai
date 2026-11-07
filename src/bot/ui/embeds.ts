@@ -332,4 +332,63 @@ export class BotEmbeds {
       .setFooter({ text: 'SealAPI Financial Intelligence' })
       .setTimestamp();
   }
+
+  /**
+   * Embed for /set-balance confirmation sent to admin.
+   */
+  public static balanceUpdated(params: {
+    tokenId: number;
+    tokenName: string;
+    maskedKey: string;
+    groupId: string;
+    groupDisplayName: string;
+    rawRequests: number;
+    roundedRequests: number;
+    baseCostCny: number;
+    markup: number;
+    quotaCny: Decimal | string | number;
+    calculatedUnits: number;
+    previousUnits: number;
+    newRemainUnits: number;
+    mode: 'set' | 'add';
+    note?: string;
+  }): EmbedBuilder {
+    const quotaCnyStr =
+      typeof params.quotaCny === 'object' && params.quotaCny !== null && 'toFixed' in params.quotaCny
+        ? params.quotaCny.toFixed(2)
+        : Number(params.quotaCny).toFixed(2);
+
+    const modeLabel =
+      params.mode === 'add' ? '➕ บวกเพิ่มจากยอดเดิม (Add / Top-up)' : '🔄 ตั้งค่ายอดใหม่ (Set / Replace)';
+    const roundNote =
+      params.rawRequests !== params.roundedRequests
+        ? ` (${params.rawRequests} ➔ ปัดเศษเป็น **${params.roundedRequests}**)`
+        : '';
+
+    let desc =
+      `🏷️ **Token Name :** \`${params.tokenName}\` (ID: \`${params.tokenId}\`)\n` +
+      `🔑 **Key :** \`${params.maskedKey}\`\n` +
+      `🤖 **Group Model :** **${params.groupDisplayName}**\n` +
+      `📦 **จำนวน Request :** **${params.roundedRequests.toLocaleString('en-US')} Requests**${roundNote}\n` +
+      `⚙️ **รูปแบบการปรับยอด :** **${modeLabel}**\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `### 📊 รายละเอียดการคำนวณและโควต้า\n` +
+      `• **สูตรคำนวณ:** ต้นทุน ¥${params.baseCostCny} × ตัวคูณ ${params.markup} × ${params.roundedRequests} req = **¥${quotaCnyStr} CNY**\n` +
+      `• **โควต้าที่คำนวณได้:** **${params.calculatedUnits.toLocaleString('en-US')} Quota Units**\n` +
+      `• **ยอดเดิม:** ${params.previousUnits.toLocaleString('en-US')} Units ➔ **ยอดคงเหลือใหม่: ${params.newRemainUnits.toLocaleString('en-US')} Quota Units**\n` +
+      `• **สถานะ Token:** \`✅ พร้อมใช้งาน (ACTIVE)\`\n`;
+
+    if (params.note && params.note.trim()) {
+      desc += `• 📝 **บันทึกโน๊ต:** *${params.note.trim()}*\n`;
+    }
+
+    desc += `\n*ระบบได้ซิงค์ข้อมูลเข้า NewAPI และฐานข้อมูลเรียบร้อยแล้ว*`;
+
+    return new EmbedBuilder()
+      .setTitle('⚖️ SealAPI — ปรับปรุงยอดโควต้าสำเร็จ (Balance Updated)')
+      .setDescription(desc)
+      .setColor(0x00d26a)
+      .setFooter({ text: 'SealAPI Hub • Admin Token Management' })
+      .setTimestamp();
+  }
 }

@@ -76,6 +76,32 @@ export interface IssueManualTokenResult {
   username: string;
 }
 
+export interface SetTokenBalanceInput {
+  tokenIdOrName: string;
+  requests: number;
+  mode?: 'set' | 'add';
+  note?: string;
+  adminDiscordId: string;
+}
+
+export interface SetTokenBalanceResult {
+  tokenId: number;
+  tokenName: string;
+  maskedKey: string;
+  groupId: string;
+  groupDisplayName: string;
+  rawRequests: number;
+  roundedRequests: number;
+  baseCostCny: number;
+  markup: number;
+  quotaCny: Decimal;
+  calculatedUnits: number;
+  previousUnits: number;
+  newRemainUnits: number;
+  mode: 'set' | 'add';
+  note?: string;
+}
+
 export class TokenProvisioningService {
   private static inFlightLocks = new Set<string>();
 
@@ -973,6 +999,203 @@ export class TokenProvisioningService {
       gatewayUrl,
       discordUserId,
       username,
+    };
+  }
+
+  /**
+   * Fetches active tokens for Discord slash command autocomplete.
+   */
+  public async getTokensForAutocomplete(
+    keyword: string = ''
+  ): Promise<Array<{ id: number; name: string; group: string; remain_quota: number }>> {
+    const prisma = getPrismaClient();
+    const cleanKw = keyword.trim().toLowerCase();
+
+    try {
+      const rows = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT id, name, "group", remain_quota FROM tokens WHERE deleted_at IS NULL ORDER BY id DESC LIMIT 50;`
+      );
+
+      const filtered = rows.filter((r) => {
+        if (!cleanKw) return true;
+        const name = String(r.name || '').toLowerCase();
+        const group = String(r.group || '').toLowerCase();
+        const idStr = String(r.id || '');
+        return name.includes(cleanKw) || group.includes(cleanKw) || idStr.includes(cleanKw);
+      });
+
+      return filtered.slice(0, 25).map((r) => ({
+        id: typeof r.id === 'bigint' ? Number(r.id) : Number(r.id),
+        name: String(r.name || `Token-${r.id}`),
+        group: String(r.group || ''),
+        remain_quota: typeof r.remain_quota === 'bigint' ? Number(r.remain_quota) : Number(r.remain_quota || 0),
+      }));
+    } catch (err: any) {
+      console.warn('[getTokensForAutocomplete] Fallback query error:', err.message);
+      return [];
+    }
+  }
+
+  /**
+   * Sets or tops-up token balance in NewAPI based on number of requests and formula:
+   * Quota (CNY) = Base Cost × Markup × Requests
+   * Handles non-round requests by rounding to nearest integer.
+   */
+  public async setTokenBalance(input: SetTokenBalanceInput): Promise<SetTokenBalanceResult> {
+    const prisma = getPrismaClient();
+    const query = input.tokenIdOrName.trim();
+    const numericId = /^\d+$/.test(query) ? Number(query) : null;
+
+    let rows: any[] = [];
+    if (numericId !== null) {
+      rows = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT id, key, name, "group", remain_quota, status, expired_time, unlimited_quota, model_limits_enabled, model_limits, allow_ips FROM tokens WHERE id = $1 AND deleted_at IS NULL LIMIT 1`,
+        numericId
+      );
+    }
+
+    if (rows.length === 0) {
+      rows = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT id, key, name, "group", remain_quota, status, expired_time, unlimited_quota, model_limits_enabled, model_limits, allow_ips FROM tokens WHERE name = $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 1`,
+        query
+      );
+    }
+
+    if (rows.length === 0) {
+      rows = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT id, key, name, "group", remain_quota, status, expired_time, unlimited_quota, model_limits_enabled, model_limits, allow_ips FROM tokens WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 1`,
+        `%${query}%`
+      );
+    }
+
+    if (rows.length === 0) {
+      throw new TokenProvisioningError(`ไม่พบ Token ใน NewAPI ที่ตรงกับ "${query}"`);
+    }
+
+    const token = rows[0];
+    const tokenId = typeof token.id === 'bigint' ? Number(token.id) : Number(token.id);
+    const tokenName = String(token.name || `Token-${tokenId}`);
+    const tokenGroup = String(token.group || '');
+
+    // Round the request count
+    const rawRequests = Number(input.requests);
+    if (isNaN(rawRequests) || rawRequests <= 0) {
+      throw new TokenProvisioningError('จำนวน Request ต้องเป็นตัวเลขที่มากกว่า 0');
+    }
+    const roundedRequests = Math.max(1, Math.round(rawRequests));
+
+    // Determine Group ID and Pricing Formula
+    let groupId: ModelGroupId = MODEL_GROUPS.GROUP_CLAUDE;
+    let baseCostCny = 0.03;
+    let markup = 2.5;
+    let groupDisplayName = 'Group Claude [NxGC] (Claude 3.5/3.7 & Opus)';
+
+    if (tokenName.includes('NxG1') || tokenGroup === 'nextgroupA') {
+      groupId = MODEL_GROUPS.GROUP_A;
+      baseCostCny = 0.02;
+      markup = 2.5;
+      groupDisplayName = 'Group A [NxG1] (Gemini Flash & Fast)';
+    } else if (tokenName.includes('NxGE') || tokenGroup === 'nextgroupE') {
+      groupId = MODEL_GROUPS.GROUP_E;
+      baseCostCny = 0.03;
+      markup = 3.0;
+      groupDisplayName = 'Group E [NxGE] (Gemini Pro & Search)';
+    }
+
+    // Quota formula: Base Cost × Markup × Requests
+    const quotaCny = new Decimal(baseCostCny).mul(markup).mul(roundedRequests);
+    const calculatedUnits = this.calculateQuotaUnits(quotaCny);
+
+    const previousUnits =
+      typeof token.remain_quota === 'bigint'
+        ? Number(token.remain_quota)
+        : Number(token.remain_quota || 0);
+    const mode = input.mode === 'add' ? 'add' : 'set';
+    const newRemainUnits = mode === 'add' ? Math.max(0, previousUnits + calculatedUnits) : calculatedUnits;
+
+    // 1. Direct DB update on tokens table
+    await prisma.$queryRawUnsafe(
+      `UPDATE tokens SET remain_quota = $1, status = 1 WHERE id = $2`,
+      BigInt(newRemainUnits),
+      BigInt(tokenId)
+    );
+
+    // 2. HTTP PUT to NewAPI
+    try {
+      await this.newApiService.updateToken({
+        id: tokenId,
+        name: token.name,
+        remain_quota: newRemainUnits,
+        expired_time: token.expired_time ?? -1,
+        unlimited_quota: false,
+        model_limits_enabled: Boolean(token.model_limits_enabled),
+        models: token.model_limits || '',
+        group: token.group || '',
+        status: 1,
+      });
+    } catch (err: any) {
+      console.warn(`[SetBalance] HTTP update to New API warning: ${err.message}`);
+    }
+
+    // 3. Update customer_token_records if exists
+    try {
+      await prisma.customerTokenRecord.updateMany({
+        where: {
+          OR: [{ newApiTokenId: tokenId }, { tokenName: token.name }],
+        },
+        data: {
+          quotaCny: quotaCny.toFixed(4),
+          status: KEY_STATUS.ACTIVE,
+          provisioningStatus: PROVISIONING_STATUS.DELIVERED,
+          lastError: null,
+        },
+      });
+    } catch (err: any) {
+      console.warn(`[SetBalance] Update CustomerTokenRecord warning: ${err.message}`);
+    }
+
+    // 4. Record Audit Log
+    const rawKey = token.key ? (token.key.startsWith('sk-') ? token.key : `sk-${token.key}`) : 'sk-****';
+    const maskedKey = CryptoService.maskApiKey(rawKey);
+    await prisma.auditLog.create({
+      data: {
+        actorDiscordId: input.adminDiscordId,
+        action: 'ADMIN_SET_BALANCE',
+        targetType: 'TOKEN',
+        targetId: String(tokenId),
+        details: JSON.stringify({
+          tokenId,
+          tokenName,
+          rawRequests,
+          roundedRequests,
+          baseCostCny,
+          markup,
+          quotaCny: quotaCny.toFixed(4),
+          calculatedUnits,
+          previousUnits,
+          newRemainUnits,
+          mode,
+          note: input.note || '',
+        }),
+      },
+    });
+
+    return {
+      tokenId,
+      tokenName,
+      maskedKey,
+      groupId,
+      groupDisplayName,
+      rawRequests,
+      roundedRequests,
+      baseCostCny,
+      markup,
+      quotaCny,
+      calculatedUnits,
+      previousUnits,
+      newRemainUnits,
+      mode,
+      note: input.note,
     };
   }
 }

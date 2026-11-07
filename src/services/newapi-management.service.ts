@@ -46,6 +46,8 @@ export interface NewApiTokenItem {
   used_quota?: number;
   group?: string;
   models?: string;
+  model_limits?: string;
+  model_limits_enabled?: boolean;
   subnet?: string;
 }
 

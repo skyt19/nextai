@@ -120,6 +120,8 @@ export class NextAiDiscordBot {
       try {
         if (interaction.isChatInputCommand()) {
           await this.handleSlashCommand(interaction);
+        } else if (interaction.isAutocomplete()) {
+          await this.handleAutocomplete(interaction);
         } else if (interaction.isStringSelectMenu()) {
           await this.handleSelectMenu(interaction);
         } else if (interaction.isButton()) {
@@ -222,7 +224,11 @@ export class NextAiDiscordBot {
     }
 
     // Admin commands
-    else if (['admin', 'ticket-panel', 'payment-review', 'customer', 'customer-key', 'rates', 'issue-key'].includes(commandName)) {
+    else if (
+      ['admin', 'ticket-panel', 'payment-review', 'customer', 'customer-key', 'rates', 'issue-key', 'set-balance'].includes(
+        commandName
+      )
+    ) {
       if (!this.reviewHandler.isAuthorizedAdmin(userId)) {
         await interaction.reply({
           content: '⛔ **ไม่มีสิทธิ์:** คำสั่งนี้จำกัดสิทธิ์เฉพาะผู้ดูแลระบบเท่านั้น',
@@ -405,7 +411,97 @@ export class NextAiDiscordBot {
             content: `❌ **เกิดข้อผิดพลาดในการออก API Key:** ${err.message}`,
           });
         }
+      } else if (commandName === 'set-balance') {
+        await interaction.deferReply({ ephemeral: true });
+
+        const tokenInput = interaction.options.getString('token', true);
+        const requests = interaction.options.getNumber('requests', true);
+        const note = interaction.options.getString('note') || undefined;
+        const mode = (interaction.options.getString('mode') as 'set' | 'add') || 'set';
+
+        try {
+          const result = await this.tokenProvisioningService.setTokenBalance({
+            tokenIdOrName: tokenInput,
+            requests,
+            mode,
+            note,
+            adminDiscordId: userId,
+          });
+
+          const embed = BotEmbeds.balanceUpdated(result);
+
+          let fxRate = 5.08;
+          try {
+            const rates = await this.frankfurterService.getRates();
+            if (rates?.rates?.THB) {
+              fxRate = rates.rates.THB.toNumber();
+            }
+          } catch {
+            // Fallback rate
+          }
+
+          const profitEmbed = BotEmbeds.adminProfitReport({
+            username: result.tokenName,
+            tokenName: result.tokenName,
+            groupId: result.groupId,
+            groupDisplayName: result.groupDisplayName,
+            requests: result.roundedRequests,
+            baseCostCny: result.baseCostCny,
+            markup: result.markup,
+            cnyToThbRate: fxRate,
+          });
+
+          await interaction.editReply({
+            content: `✅ **ปรับยอดโควต้าให้ Token สำเร็จเรียบร้อยแล้ว**`,
+            embeds: [embed],
+          });
+
+          // Send admin profit and cost breakdown as another separate message
+          await interaction.followUp({
+            embeds: [profitEmbed],
+            ephemeral: true,
+          });
+        } catch (err: any) {
+          console.error('[DiscordBot] Error in set-balance:', err);
+          await interaction.editReply({
+            content: `❌ **เกิดข้อผิดพลาดในการปรับยอดโควต้า:** ${err.message}`,
+          });
+        }
       }
+    }
+  }
+
+  private async handleAutocomplete(interaction: any): Promise<void> {
+    try {
+      const { commandName } = interaction;
+      if (commandName === 'set-balance') {
+        if (!this.reviewHandler.isAuthorizedAdmin(interaction.user.id)) {
+          await interaction.respond([]);
+          return;
+        }
+
+        const focusedValue = interaction.options.getFocused();
+        const tokens = await this.tokenProvisioningService.getTokensForAutocomplete(focusedValue);
+
+        const choices = tokens.map((t) => {
+          const isGroupA = t.name.includes('NxG1') || t.group === 'nextgroupA';
+          const baseCost = isGroupA ? 0.02 : 0.03;
+          const markup = t.name.includes('NxGE') || t.group === 'nextgroupE' ? 3.0 : 2.5;
+          const unitPerReq = Math.round(((baseCost * markup) / 6.7) * 500000);
+          const approxReqs = Math.max(0, Math.round(t.remain_quota / (unitPerReq || 1)));
+
+          const label = `[#${t.id}] ${t.name} (~${approxReqs.toLocaleString('en-US')} reqs)`;
+          return {
+            name: label.slice(0, 100),
+            value: String(t.id),
+          };
+        });
+
+        await interaction.respond(choices);
+      }
+    } catch (err: any) {
+      console.error('[DiscordBot] Autocomplete error:', err.message);
+      await interaction.respond([]).catch(() => {});
     }
   }
 
