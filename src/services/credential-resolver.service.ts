@@ -94,6 +94,7 @@ export class UpstreamCredentialResolver {
         key = this.credentials.newApiKeyGroupE ?? this.credentials.keyGroupE;
         break;
       case MODEL_GROUPS.GROUP_CLAUDE:
+      case MODEL_GROUPS.GROUP_CLAUDE_LM:
         key = this.credentials.newApiKeyGroupClaude ?? this.credentials.keyGroupClaude;
         break;
       default:

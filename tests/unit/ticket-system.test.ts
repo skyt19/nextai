@@ -22,9 +22,9 @@ describe('Discord Ticket Management System Tests', () => {
   beforeEach(async () => {
     vi.restoreAllMocks();
     try {
-      await prisma.ticket.deleteMany({
-        where: { ownerDiscordId: testOwnerId },
-      });
+      await prisma.paymentSlip.deleteMany({});
+      await prisma.payment.deleteMany({});
+      await prisma.ticket.deleteMany({});
     } catch {
       // Ignore
     }
@@ -366,11 +366,12 @@ describe('Discord Ticket Management System Tests', () => {
       const menu = groupRow.components[0] as any;
 
       expect(menu.data.custom_id).toBe('purchase_select_group');
-      expect(menu.options.length).toBe(3);
+      expect(menu.options.length).toBe(4);
       const values = menu.options.map((o: any) => o.data.value);
-      expect(values).toContain('NxG1');
-      expect(values).toContain('NxGE');
-      expect(values).toContain('NxGC');
+      expect(values).toContain('SxG1');
+      expect(values).toContain('SxGE');
+      expect(values).toContain('SxGC');
+      expect(values).toContain('SxCGL');
     });
 
     it('generates Stage 2 Reference Requests select menu', () => {

@@ -178,7 +178,7 @@ export class NextAiDiscordBot {
       await interaction.deferReply({ ephemeral: true });
       const groups = await this.customerService.getCustomerAllowedGroups(userId);
       const availableModels = this.catalogService.getModelsForGroups(
-        groups.length > 0 ? groups : ['NxG1']
+        groups.length > 0 ? groups : ['SxG1']
       );
 
       // Public presentation: never reveals provider base cost or Bearlab upstream IDs
@@ -189,7 +189,7 @@ export class NextAiDiscordBot {
       await interaction.editReply({
         content:
           `### 🤖 โมเดล AI ที่พร้อมใช้งานสำหรับบัญชีของคุณ\n` +
-          `กลุ่มโมเดลที่ได้รับสิทธิ์: \`${groups.length > 0 ? groups.join(', ') : 'NxG1 (ตัวอย่างเริ่มต้น)'}\`\n\n` +
+          `กลุ่มโมเดลที่ได้รับสิทธิ์: \`${groups.length > 0 ? groups.join(', ') : 'SxG1 (ตัวอย่างเริ่มต้น)'}\`\n\n` +
           `${listDesc}`,
       });
     } else if (commandName === 'balance') {
@@ -484,9 +484,10 @@ export class NextAiDiscordBot {
         const tokens = await this.tokenProvisioningService.getTokensForAutocomplete(focusedValue);
 
         const choices = tokens.map((t) => {
-          const isGroupA = t.name.includes('NxG1') || t.group === 'nextgroupA';
+          const isGroupA = t.name.includes('SxG1') || t.name.includes('NxG1') || t.group === 'nextgroupA';
+          const isGroupE = t.name.includes('SxGE') || t.name.includes('NxGE') || t.group === 'nextgroupE';
           const baseCost = isGroupA ? 0.02 : 0.03;
-          const markup = t.name.includes('NxGE') || t.group === 'nextgroupE' ? 3.0 : 2.5;
+          const markup = isGroupE ? 3.0 : 2.5;
           const unitPerReq = Math.round(((baseCost * markup) / 6.7) * 500000);
           const approxReqs = Math.max(0, Math.round(t.remain_quota / (unitPerReq || 1)));
 

@@ -1,15 +1,30 @@
 export const MODEL_GROUPS = {
-  GROUP_A: 'NxG1',
-  GROUP_E: 'NxGE',
-  GROUP_CLAUDE: 'NxGC',
+  GROUP_A: 'SxG1',
+  GROUP_E: 'SxGE',
+  GROUP_CLAUDE: 'SxGC',
+  GROUP_CLAUDE_LM: 'SxCGL',
 } as const;
 
 export type ModelGroupId = (typeof MODEL_GROUPS)[keyof typeof MODEL_GROUPS];
+
+export function normalizeModelGroupId(groupId: string): ModelGroupId {
+  const map: Record<string, ModelGroupId> = {
+    NxG1: 'SxG1',
+    NxGE: 'SxGE',
+    NxGC: 'SxGC',
+    SxG1: 'SxG1',
+    SxGE: 'SxGE',
+    SxGC: 'SxGC',
+    SxCGL: 'SxCGL',
+  };
+  return map[groupId] || (groupId as ModelGroupId);
+}
 
 export const GROUP_MARKUPS: Record<ModelGroupId, string> = {
   [MODEL_GROUPS.GROUP_A]: '2.5',
   [MODEL_GROUPS.GROUP_E]: '3.0',
   [MODEL_GROUPS.GROUP_CLAUDE]: '2.5',
+  [MODEL_GROUPS.GROUP_CLAUDE_LM]: '2.5',
 };
 
 export const KEY_STATUS = {
@@ -56,12 +71,14 @@ export const NEWAPI_GROUP_MAP: Record<ModelGroupId, string> = {
   [MODEL_GROUPS.GROUP_A]: 'nextgroupA',
   [MODEL_GROUPS.GROUP_E]: 'nextgroupE',
   [MODEL_GROUPS.GROUP_CLAUDE]: 'claudegroup',
+  [MODEL_GROUPS.GROUP_CLAUDE_LM]: 'claudegrouphub',
 };
 
 export const NEWAPI_REVERSE_GROUP_MAP: Record<string, ModelGroupId> = {
   nextgroupA: MODEL_GROUPS.GROUP_A,
   nextgroupE: MODEL_GROUPS.GROUP_E,
   claudegroup: MODEL_GROUPS.GROUP_CLAUDE,
+  claudegrouphub: MODEL_GROUPS.GROUP_CLAUDE_LM,
 };
 
 export const PROVISIONING_STATUS = {
@@ -114,6 +131,22 @@ export const NEWAPI_GROUP_MODELS: Record<ModelGroupId, string[]> = {
     'claude-opus-5[次]',
     'claude-sonnet-4-5[次]',
     'claude-sonnet-4-6[次]',
+  ],
+  [MODEL_GROUPS.GROUP_CLAUDE_LM]: [
+    'claude-fable-5-1[次]',
+    'claude-sonnet-5-5[次]',
+    'claude-sonnet-4-5[次]',
+    'claude-opus-5[次]',
+    'claude-opus-4-8[次]',
+    'claude-opus-4-6[次]',
+    'claude-haiku-5-5[次]',
+    'claude-haiku-4-5[次]',
+    'claude-fable-5[次]',
+    'claude-sonnet-5[次]',
+    'claude-sonnet-4-6[次]',
+    'claude-opus-5-5[次]',
+    'claude-opus-4-7[次]',
+    'claude-opus-4-5[次]',
   ],
 };
 

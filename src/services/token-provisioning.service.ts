@@ -10,6 +10,7 @@ import {
   PROVISIONING_STATUS,
   ProvisioningStatus,
   ModelGroupId,
+  normalizeModelGroupId,
   KEY_STATUS,
   PAYMENT_STATUS,
 } from '../config/constants.js';
@@ -120,12 +121,13 @@ export class TokenProvisioningService {
   }
 
   /**
-   * Maps NextAI model group ID (NxG1, NxGE, NxGC) to New API Group name.
+   * Maps SealAPI model group ID (SxG1, SxGE, SxGC, SxCGL) to New API Group name.
    */
   public mapNextAiGroupToNewApi(groupId: string): string {
-    const mapped = NEWAPI_GROUP_MAP[groupId as ModelGroupId];
+    const norm = normalizeModelGroupId(groupId);
+    const mapped = NEWAPI_GROUP_MAP[norm as ModelGroupId];
     if (!mapped) {
-      throw new TokenProvisioningError(`Invalid or unmapped NextAI Group ID: ${groupId}`);
+      throw new TokenProvisioningError(`Invalid or unmapped Group ID: ${groupId}`);
     }
     return mapped;
   }
@@ -174,12 +176,13 @@ export class TokenProvisioningService {
    * Guarantees non-empty allowlist when restrictions are enabled.
    */
   public getAllowedModelsForGroup(groupId: string): string {
-    const groupModels = NEWAPI_GROUP_MODELS[groupId as ModelGroupId];
+    const norm = normalizeModelGroupId(groupId);
+    const groupModels = NEWAPI_GROUP_MODELS[norm as ModelGroupId];
     if (groupModels && groupModels.length > 0) {
       return groupModels.join(',');
     }
 
-    const models = this.catalogService.getModelsForGroups([groupId], false);
+    const models = this.catalogService.getModelsForGroups([norm, groupId], false);
     const modelIds = models.map((m) => m.originalBearlabModelId || m.publicModelId);
     if (modelIds.length === 0) {
       throw new TokenProvisioningError(
@@ -833,11 +836,12 @@ export class TokenProvisioningService {
    */
   public async issueManualToken(input: IssueManualTokenInput): Promise<IssueManualTokenResult> {
     const prisma = getPrismaClient();
-    const groupId = input.groupId as ModelGroupId;
+    const norm = normalizeModelGroupId(input.groupId);
 
-    if (![MODEL_GROUPS.GROUP_A, MODEL_GROUPS.GROUP_E, MODEL_GROUPS.GROUP_CLAUDE].includes(groupId)) {
-      throw new TokenProvisioningError(`Invalid group ID: ${groupId}. Must be NxG1, NxGE, or NxGC.`);
+    if (![MODEL_GROUPS.GROUP_A, MODEL_GROUPS.GROUP_E, MODEL_GROUPS.GROUP_CLAUDE, MODEL_GROUPS.GROUP_CLAUDE_LM].includes(norm)) {
+      throw new TokenProvisioningError(`Invalid group ID: ${input.groupId}. Must be SxG1, SxGE, SxGC, or SxCGL.`);
     }
+    const groupId = norm;
 
     if (!input.requests || input.requests <= 0) {
       throw new TokenProvisioningError('Number of requests must be a positive integer.');
@@ -973,13 +977,15 @@ export class TokenProvisioningService {
       },
     });
 
-    let groupDisplayName = `Group Claude [NxGC]`;
-    if (groupId === MODEL_GROUPS.GROUP_A) {
-      groupDisplayName = 'Group A [NxG1] (Gemini Flash & Fast)';
+    let groupDisplayName = `Group Claude [SxGC]`;
+    if (groupId === MODEL_GROUPS.GROUP_CLAUDE_LM) {
+      groupDisplayName = 'Group Claude LM [SxCGL] (SealxClaudeGroupLM)';
+    } else if (groupId === MODEL_GROUPS.GROUP_A) {
+      groupDisplayName = 'Group A [SxG1] (Gemini Flash & Fast)';
     } else if (groupId === MODEL_GROUPS.GROUP_E) {
-      groupDisplayName = 'Group E [NxGE] (Gemini Pro & Search)';
+      groupDisplayName = 'Group E [SxGE] (Gemini Pro & Search)';
     } else if (groupId === MODEL_GROUPS.GROUP_CLAUDE) {
-      groupDisplayName = 'Group Claude [NxGC] (Claude 3.5/3.7 & Opus)';
+      groupDisplayName = 'Group Claude [SxGC] (Claude 3.5/3.7 & Opus)';
     }
 
     const gatewayUrl = env.NEWAPI_PUBLIC_ENDPOINT || 'https://next-newapi.onrender.com/v1';
@@ -1088,18 +1094,28 @@ export class TokenProvisioningService {
     let groupId: ModelGroupId = MODEL_GROUPS.GROUP_CLAUDE;
     let baseCostCny = 0.03;
     let markup = 2.5;
-    let groupDisplayName = 'Group Claude [NxGC] (Claude 3.5/3.7 & Opus)';
+    let groupDisplayName = 'Group Claude [SxGC] (Claude 3.5/3.7 & Opus)';
 
-    if (tokenName.includes('NxG1') || tokenGroup === 'nextgroupA') {
+    if (tokenName.includes('SxCGL') || tokenGroup === 'claudegrouphub') {
+      groupId = MODEL_GROUPS.GROUP_CLAUDE_LM;
+      baseCostCny = 0.03;
+      markup = 2.5;
+      groupDisplayName = 'Group Claude LM [SxCGL] (SealxClaudeGroupLM)';
+    } else if (tokenName.includes('SxG1') || tokenName.includes('NxG1') || tokenGroup === 'nextgroupA') {
       groupId = MODEL_GROUPS.GROUP_A;
       baseCostCny = 0.02;
       markup = 2.5;
-      groupDisplayName = 'Group A [NxG1] (Gemini Flash & Fast)';
-    } else if (tokenName.includes('NxGE') || tokenGroup === 'nextgroupE') {
+      groupDisplayName = 'Group A [SxG1] (Gemini Flash & Fast)';
+    } else if (tokenName.includes('SxGE') || tokenName.includes('NxGE') || tokenGroup === 'nextgroupE') {
       groupId = MODEL_GROUPS.GROUP_E;
       baseCostCny = 0.03;
       markup = 3.0;
-      groupDisplayName = 'Group E [NxGE] (Gemini Pro & Search)';
+      groupDisplayName = 'Group E [SxGE] (Gemini Pro & Search)';
+    } else if (tokenName.includes('SxGC') || tokenName.includes('NxGC') || tokenGroup === 'claudegroup') {
+      groupId = MODEL_GROUPS.GROUP_CLAUDE;
+      baseCostCny = 0.03;
+      markup = 2.5;
+      groupDisplayName = 'Group Claude [SxGC] (Claude 3.5/3.7 & Opus)';
     }
 
     // Quota formula: Base Cost × Markup × Requests

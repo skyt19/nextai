@@ -18,9 +18,10 @@ export class BotComponents {
   /**
    * Stage 1: Select Model Group (in Thai)
    * Options:
-   * - NxG1 — Gemini Group A
-   * - NxGE — Gemini Group E
-   * - NxGC — Claude Group
+   * - SxCGL — Claude LLM Hub Group
+   * - SxGC — Claude Group
+   * - SxG1 — Gemini Group A
+   * - SxGE — Gemini Group E
    */
   public static modelGroupSelectMenu(): ActionRowBuilder<StringSelectMenuBuilder> {
     const selectMenu = new StringSelectMenuBuilder()
@@ -28,20 +29,25 @@ export class BotComponents {
       .setPlaceholder('เลือกกลุ่มโมเดลที่ต้องการใช้งาน...')
       .addOptions(
         new StringSelectMenuOptionBuilder()
-          .setLabel('NxG1 — Gemini Group A')
+          .setLabel('SxCGL — Claude LLM Hub Group')
+          .setDescription('โมเดล Claude LLM Hub (Claude Haiku ยัน Opus 5.5)')
+          .setValue(MODEL_GROUPS.GROUP_CLAUDE_LM)
+          .setEmoji('🦭'),
+        new StringSelectMenuOptionBuilder()
+          .setLabel('SxGC — Claude Group')
+          .setDescription('โมเดลตระกูล Claude 4.5/5 (Sonnet, Opus & Haiku)')
+          .setValue(MODEL_GROUPS.GROUP_CLAUDE)
+          .setEmoji('🎭'),
+        new StringSelectMenuOptionBuilder()
+          .setLabel('SxG1 — Gemini Group A')
           .setDescription('โมเดลตระกูล Gemini รุ่น Fast & High (ความเร็วและงานทั่วไป)')
           .setValue(MODEL_GROUPS.GROUP_A)
           .setEmoji('⚡'),
         new StringSelectMenuOptionBuilder()
-          .setLabel('NxGE — Gemini Group E')
+          .setLabel('SxGE — Gemini Group E')
           .setDescription('โมเดลตระกูล Gemini รุ่น Pro & Search (งานคิดวิเคราะห์ระดับสูง)')
           .setValue(MODEL_GROUPS.GROUP_E)
-          .setEmoji('🧠'),
-        new StringSelectMenuOptionBuilder()
-          .setLabel('NxGC — Claude Group')
-          .setDescription('โมเดลตระกูล Claude 4.5/5 (Sonnet, Opus & Haiku)')
-          .setValue(MODEL_GROUPS.GROUP_CLAUDE)
-          .setEmoji('🎭')
+          .setEmoji('🧠')
       );
 
     return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);

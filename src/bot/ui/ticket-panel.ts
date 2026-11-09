@@ -60,9 +60,10 @@ export class TicketPanelUI {
       .setDescription(
         `ยินดีต้อนรับคุณ <@${username}> สู่ขั้นตอนการสั่งซื้อแพ็กเกจ SealAPI Hub\n\n` +
           `กรุณาเลือก **กลุ่มโมเดล (Model Group)** ที่ท่านต้องการใช้งานจากเมนูด้านล่างนี้:\n\n` +
-          `• **NxG1 — Gemini Group A**: โมเดล Gemini รุ่น Fast & High (ความเร็วและงานทั่วไป)\n` +
-          `• **NxGE — Gemini Group E**: โมเดล Gemini รุ่น Pro & Search (การคิดวิเคราะห์ขั้นสูงและ Search)\n` +
-          `• **NxGC — Claude Group**: โมเดลตระกูล Claude 4.5/5 (Sonnet, Opus & Haiku)\n\n` +
+          `• **SxCGL — Claude LLM Hub Group**: โมเดล Claude LLM Hub (Claude Haiku ยัน Opus 5.5)\n` +
+          `• **SxGC — Claude Group**: โมเดลตระกูล Claude 4.5/5 (Sonnet, Opus & Haiku)\n` +
+          `• **SxG1 — Gemini Group A**: โมเดล Gemini รุ่น Fast & High (ความเร็วและงานทั่วไป)\n` +
+          `• **SxGE — Gemini Group E**: โมเดล Gemini รุ่น Pro & Search (การคิดวิเคราะห์ขั้นสูงและ Search)\n\n` +
           `*หลังจากเลือกกลุ่มโมเดลแล้ว ระบบจะให้ท่านเลือกจำนวน Reference Requests ในขั้นตอนถัดไป*`
       )
       .setColor(0xfee75c);

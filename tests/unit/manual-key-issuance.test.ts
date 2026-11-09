@@ -53,8 +53,22 @@ describe('Manual Key Issuance & /issue-key Command Tests', () => {
     expect(resultClaude.quotaCny.toNumber()).toBe(18.75);
     expect(resultClaude.quotaUnits).toBe(1399254);
     expect(resultClaude.plainTextKey).toContain('sk-test-mock-key-');
-    expect(resultClaude.tokenName).toBe('NxGC - somchai_ig');
-    expect(resultClaude.groupDisplayName).toContain('Group Claude [NxGC]');
+    expect(resultClaude.tokenName).toBe('SxGC - somchai_ig');
+    expect(resultClaude.groupDisplayName).toContain('Group Claude [SxGC]');
+
+    // Test Group Claude LM (SxCGL): 250 Starter Pack requests × 0.03 base cost × 2.5 markup = 18.75 CNY
+    const resultClaudeLm = await service.issueManualToken({
+      groupId: MODEL_GROUPS.GROUP_CLAUDE_LM,
+      requests: 250,
+      username: 'snxrff_ig',
+    });
+
+    expect(resultClaudeLm.baseCostCny).toBe(0.03);
+    expect(resultClaudeLm.markup).toBe(2.5);
+    expect(resultClaudeLm.quotaCny.toNumber()).toBe(18.75);
+    expect(resultClaudeLm.quotaUnits).toBe(1399254);
+    expect(resultClaudeLm.tokenName).toBe('SxCGL - snxrff_ig');
+    expect(resultClaudeLm.groupDisplayName).toContain('Group Claude LM [SxCGL]');
 
     // Test Group A: 250 requests × 0.02 base cost × 2.5 markup = 12.50 CNY
     const resultA = await service.issueManualToken({
@@ -67,7 +81,7 @@ describe('Manual Key Issuance & /issue-key Command Tests', () => {
     expect(resultA.markup).toBe(2.5);
     expect(resultA.quotaCny.toNumber()).toBe(12.5);
     expect(resultA.quotaUnits).toBe(932836);
-    expect(resultA.tokenName).toBe('NxG1 - UserA');
+    expect(resultA.tokenName).toBe('SxG1 - UserA');
 
     // Test Group E: 250 requests × 0.03 base cost × 3.0 markup = 22.50 CNY
     const resultE = await service.issueManualToken({
@@ -80,7 +94,7 @@ describe('Manual Key Issuance & /issue-key Command Tests', () => {
     expect(resultE.markup).toBe(3.0);
     expect(resultE.quotaCny.toNumber()).toBe(22.5);
     expect(resultE.quotaUnits).toBe(1679104);
-    expect(resultE.tokenName).toBe('NxGE - UserE');
+    expect(resultE.tokenName).toBe('SxGE - UserE');
 
     // Test custom markup override: e.g. 3.0 markup on Group Claude 500 reqs (500 × 0.03 × 3.0 = 45 CNY)
     const resultCustom = await service.issueManualToken({
@@ -97,9 +111,9 @@ describe('Manual Key Issuance & /issue-key Command Tests', () => {
   it('should format BotEmbeds.manualKeyIssued with Endpoint, Key, Username, Token Name, Request, and YouTube Video link without exposing internal details', () => {
     const embed = BotEmbeds.manualKeyIssued({
       plainTextKey: 'sk-sealapi-sample-key-abcdef123456',
-      tokenName: 'NxGC - snxrff_buyer',
-      groupId: 'NxGC',
-      groupDisplayName: 'Group Claude [NxGC] (Claude 3.5/3.7 & Opus)',
+      tokenName: 'SxGC - snxrff_buyer',
+      groupId: 'SxGC',
+      groupDisplayName: 'Group Claude [SxGC] (Claude 3.5/3.7 & Opus)',
       requests: 250,
       gatewayUrl: 'https://next-newapi.onrender.com/v1',
       username: 'snxrff_buyer',
@@ -118,11 +132,11 @@ describe('Manual Key Issuance & /issue-key Command Tests', () => {
     expect(data.description).toContain('ผู้ใช้งาน :');
     expect(data.description).toContain('snxrff_buyer');
     expect(data.description).toContain('Token Name :');
-    expect(data.description).toContain('NxGC - snxrff_buyer');
+    expect(data.description).toContain('SxGC - snxrff_buyer');
     expect(data.description).toContain('Request :');
     expect(data.description).toContain('250 Requests (Starter Pack)');
     expect(data.description).toContain('Group Model :');
-    expect(data.description).toContain('Group Claude [NxGC]');
+    expect(data.description).toContain('Group Claude [SxGC]');
     expect(data.description).toContain('https://youtu.be/9KkDWaEsuHc');
 
     // Specified omitted fields
@@ -136,9 +150,9 @@ describe('Manual Key Issuance & /issue-key Command Tests', () => {
   it('should format BotEmbeds.adminProfitReport with exact cost, revenue, profit, and margin breakdown', () => {
     const embed = BotEmbeds.adminProfitReport({
       username: 'snxrff_buyer',
-      tokenName: 'NxGC - snxrff_buyer',
-      groupId: 'NxGC',
-      groupDisplayName: 'Group Claude [NxGC] (Claude 3.5/3.7 & Opus)',
+      tokenName: 'SxGC - snxrff_buyer',
+      groupId: 'SxGC',
+      groupDisplayName: 'Group Claude [SxGC] (Claude 3.5/3.7 & Opus)',
       requests: 250,
       baseCostCny: 0.03,
       markup: 2.5,
@@ -183,10 +197,10 @@ describe('Manual Key Issuance & /issue-key Command Tests', () => {
   it('should format BotEmbeds.balanceUpdated with correct calculation, rounded requests, and note', () => {
     const embed = BotEmbeds.balanceUpdated({
       tokenId: 10,
-      tokenName: 'NxGC - somchai_ig',
+      tokenName: 'SxGC - somchai_ig',
       maskedKey: 'sk-3xny...WlH',
-      groupId: 'NxGC',
-      groupDisplayName: 'Group Claude [NxGC] (Claude 3.5/3.7 & Opus)',
+      groupId: 'SxGC',
+      groupDisplayName: 'Group Claude [SxGC] (Claude 3.5/3.7 & Opus)',
       rawRequests: 249.7,
       roundedRequests: 250,
       baseCostCny: 0.03,
@@ -202,7 +216,7 @@ describe('Manual Key Issuance & /issue-key Command Tests', () => {
     const data = embed.toJSON();
     expect(data.title).toContain('ปรับปรุงยอดโควต้าสำเร็จ');
     expect(data.color).toBe(0x00d26a);
-    expect(data.description).toContain('NxGC - somchai_ig');
+    expect(data.description).toContain('SxGC - somchai_ig');
     expect(data.description).toContain('250 Requests');
     expect(data.description).toContain('249.7 ➔ ปัดเศษเป็น **250**');
     expect(data.description).toContain('¥18.75 CNY');

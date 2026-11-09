@@ -102,12 +102,13 @@ export const adminSlashCommands = [
     .addStringOption((opt) =>
       opt
         .setName('group')
-        .setDescription('กลุ่มโมเดล AI (NxGC, NxG1, NxGE)')
+        .setDescription('กลุ่มโมเดล AI (SxCGL, SxGC, SxG1, SxGE)')
         .setRequired(true)
         .addChoices(
-          { name: 'Group Claude [NxGC] - Claude Haiku ถึง Opus 5.5 (Claude Gateway)', value: 'NxGC' },
-          { name: 'Group A [NxG1] - Gemini Flash & Fast', value: 'NxG1' },
-          { name: 'Group E [NxGE] - Gemini Pro & Search', value: 'NxGE' }
+          { name: 'Group Claude LM [SxCGL] - Claude LLM Hub (99฿ / 250 req)', value: 'SxCGL' },
+          { name: 'Group Claude [SxGC] - Claude Haiku ถึง Opus 5.5', value: 'SxGC' },
+          { name: 'Group A [SxG1] - Gemini Flash & Fast', value: 'SxG1' },
+          { name: 'Group E [SxGE] - Gemini Pro & Search', value: 'SxGE' }
         )
     )
     .addStringOption((opt) =>

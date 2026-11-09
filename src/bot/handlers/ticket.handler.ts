@@ -316,9 +316,10 @@ export class TicketHandler {
     const selectedGroup = interaction.values[0];
 
     const groupNames: Record<string, string> = {
-      [MODEL_GROUPS.GROUP_A]: 'NxG1 — Gemini Group A',
-      [MODEL_GROUPS.GROUP_E]: 'NxGE — Gemini Group E',
-      [MODEL_GROUPS.GROUP_CLAUDE]: 'NxGC — Claude Group',
+      [MODEL_GROUPS.GROUP_CLAUDE_LM]: 'SxCGL — Claude LLM Hub Group',
+      [MODEL_GROUPS.GROUP_CLAUDE]: 'SxGC — Claude Group',
+      [MODEL_GROUPS.GROUP_A]: 'SxG1 — Gemini Group A',
+      [MODEL_GROUPS.GROUP_E]: 'SxGE — Gemini Group E',
     };
 
     const groupDisplayName = groupNames[selectedGroup] || selectedGroup;
@@ -347,9 +348,10 @@ export class TicketHandler {
     const referenceRequests = parseInt(interaction.values[0], 10);
 
     const groupNames: Record<string, string> = {
-      [MODEL_GROUPS.GROUP_A]: 'NxG1 — Gemini Group A',
-      [MODEL_GROUPS.GROUP_E]: 'NxGE — Gemini Group E',
-      [MODEL_GROUPS.GROUP_CLAUDE]: 'NxGC — Claude Group',
+      [MODEL_GROUPS.GROUP_CLAUDE_LM]: 'SxCGL — Claude LLM Hub Group',
+      [MODEL_GROUPS.GROUP_CLAUDE]: 'SxGC — Claude Group',
+      [MODEL_GROUPS.GROUP_A]: 'SxG1 — Gemini Group A',
+      [MODEL_GROUPS.GROUP_E]: 'SxGE — Gemini Group E',
     };
     const groupDisplayName = groupNames[groupId] || groupId;
 

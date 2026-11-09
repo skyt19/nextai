@@ -139,7 +139,7 @@ describe('UpstreamCredentialResolver Unit Tests', () => {
         expect(err).toBeInstanceOf(UpstreamConfigurationError);
         const error = err as UpstreamConfigurationError;
         expect(error.statusCode).toBe(502);
-        expect(error.message).toContain("model group 'NxG1'");
+        expect(error.message).toContain(`model group '${MODEL_GROUPS.GROUP_A}'`);
         expect(error.message).not.toContain('bearlab-secret');
       }
     });

@@ -3,7 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { Decimal } from 'decimal.js';
 import { getPrismaClient } from '../db/client.js';
-import { PAYMENT_STATUS, PaymentStatus, MODEL_GROUPS, ModelGroupId } from '../config/constants.js';
+import { PAYMENT_STATUS, PaymentStatus, MODEL_GROUPS, ModelGroupId, normalizeModelGroupId } from '../config/constants.js';
 import { CustomerService } from './customer.service.js';
 import { CalculationSnapshot, QuotaCalculator } from './calculator.service.js';
 import { FrankfurterService } from './frankfurter.service.js';
@@ -79,12 +79,14 @@ export class PaymentService {
   /**
    * Finds or creates a package definition matching the selected model group and reference request quantity.
    * Internal reference models and markups follow the Master Specification:
-   * - NxG1: 0.020 CNY/request (gemini-3-1-pro-high), markup 2.5x
-   * - NxGE: 0.030 CNY/request (gemini-2.5-pro), markup 3.0x
-   * - NxGC: 0.030 CNY/request (Claude), markup 2.5x
+   * - SxG1: 0.020 CNY/request (gemini-3-1-pro-high), markup 2.5x
+   * - SxGE: 0.030 CNY/request (gemini-2.5-pro), markup 3.0x
+   * - SxGC: 0.030 CNY/request (Claude), markup 2.5x
+   * - SxCGL: 0.030 CNY/request (Claude LLM Hub), markup 2.5x
    */
-  public async findOrCreatePackageForGroup(groupId: string, referenceRequests: number) {
+  public async findOrCreatePackageForGroup(rawGroupId: string, referenceRequests: number) {
     const prisma = getPrismaClient();
+    const groupId = normalizeModelGroupId(rawGroupId);
 
     const existing = await prisma.package.findFirst({
       where: {
@@ -101,23 +103,30 @@ export class PaymentService {
     let referenceModelCostCny = '0.020';
     let markup = '2.5';
     let groupName = 'Group A';
-    let referenceModelId = 'gemini-3-1-pro-high-nxg1';
+    let referenceModelId = 'gemini-3-1-pro-high-sxg1';
     let sellingPriceThb = '51.00';
     let bufferCny = '0.0';
 
-    if (groupId === MODEL_GROUPS.GROUP_E) {
+    if (groupId === MODEL_GROUPS.GROUP_CLAUDE_LM) {
+      referenceModelCostCny = '0.030';
+      markup = '2.5';
+      groupName = 'Group Claude LM';
+      referenceModelId = 'claude-opus-4-5-sxcgl';
+      sellingPriceThb = referenceRequests === 250 ? '99.00' : '75.00';
+      bufferCny = '0.0';
+    } else if (groupId === MODEL_GROUPS.GROUP_E) {
       referenceModelCostCny = '0.030';
       markup = '3.0';
       groupName = 'Group E';
-      referenceModelId = 'gemini-2-5-pro-nxge';
+      referenceModelId = 'gemini-2-5-pro-sxge';
       sellingPriceThb = '90.00';
       bufferCny = '0.0';
     } else if (groupId === MODEL_GROUPS.GROUP_CLAUDE) {
       referenceModelCostCny = '0.030';
       markup = '2.5';
       groupName = 'Group Claude';
-      referenceModelId = 'claude-opus-4-5-nxgc';
-      sellingPriceThb = '75.00';
+      referenceModelId = 'claude-opus-4-5-sxgc';
+      sellingPriceThb = referenceRequests === 250 ? '99.00' : '75.00';
       bufferCny = '0.0';
     }
 

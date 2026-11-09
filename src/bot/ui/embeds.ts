@@ -10,9 +10,10 @@ export class BotEmbeds {
       .setTitle('🎫 SealAPI Hub — สั่งซื้อแพ็กเกจโมเดล')
       .setDescription(
         `ยินดีต้อนรับคุณ **${username}**!\n\nกรุณาเลือกกลุ่มโมเดล AI ที่ท่านต้องการใช้งานด้านล่างนี้:\n` +
-          `• **Group A [NxG1]**: โมเดล Gemini รุ่น Fast & High\n` +
-          `• **Group E [NxGE]**: โมเดล Gemini รุ่น Pro & Search\n` +
-          `• **Group Claude [NxGC]**: โมเดล Claude 4.5/5 (Sonnet, Opus & Haiku)\n\n` +
+          `• **Group Claude LM [SxCGL]**: โมเดล Claude LLM Hub (Claude Haiku ยัน Opus 5.5)\n` +
+          `• **Group Claude [SxGC]**: โมเดล Claude 4.5/5 (Sonnet, Opus & Haiku)\n` +
+          `• **Group A [SxG1]**: โมเดล Gemini รุ่น Fast & High\n` +
+          `• **Group E [SxGE]**: โมเดล Gemini รุ่น Pro & Search\n\n` +
           `*การสั่งซื้อและการชำระเงินทั้งหมดจะดำเนินรายการอย่างปลอดภัยในห้อง Ticket ส่วนตัวนี้*`
       )
       .setColor(0x5865f2)
